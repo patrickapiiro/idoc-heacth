@@ -15,8 +15,10 @@ import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.session.InvalidSessionException;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
 
 /**
@@ -28,7 +30,15 @@ import java.util.Map;
 public class UserUtils{
 
 	@Autowired
-	private static UserFacade userFacade ;
+	private  UserFacade userFacade ;
+	public static  UserUtils userUtils ;
+
+	@PostConstruct
+	public void init(){
+		userUtils = this ;
+		this.userFacade = userFacade ;
+	}
+
 
 
 	public static final String CACHE_USER = "user";
@@ -40,13 +50,14 @@ public class UserUtils{
 				Subject subject = SecurityUtils.getSubject();
 				SystemAuthorizingRealm.Principal principal = (SystemAuthorizingRealm.Principal)subject.getPrincipal();
 				if (principal!=null){
-					YunUsers users = userFacade.getYunUsersByUserId(principal.getLoginName());
-					putCache(CACHE_USER, user);
+					YunUsers users = userUtils.userFacade.getYunUsersByUserId(principal.getLoginName());
+					putCache(CACHE_USER, users);
+					user=users ;
 				}
 			}catch (UnavailableSecurityManagerException e) {
-				
+				e.printStackTrace();
 			}catch (InvalidSessionException e){
-				
+				e.printStackTrace();
 			}
 		}
 		if (user == null){
