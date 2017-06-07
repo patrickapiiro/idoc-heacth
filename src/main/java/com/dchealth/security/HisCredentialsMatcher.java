@@ -38,7 +38,12 @@ public class HisCredentialsMatcher extends SimpleCredentialsMatcher {
         try {
             YunUsers yunUsers = userFacade.getYunUsersByUserId(username);
             String dbPass = yunUsers.getPassword() ;
+            System.out.println("salt:"+yunUsers.getSalt());
+            System.out.println("password:"+password);
+            System.out.println("username:"+username);
             String newPass = SystemPasswordService.enscriptPasswordWithSalt(yunUsers.getSalt(),username,password);
+            System.out.println("dbPass:"+dbPass);
+            System.out.println("newPass:"+newPass);
             return dbPass.equals(newPass);
         } catch (Exception e) {
             e.printStackTrace();

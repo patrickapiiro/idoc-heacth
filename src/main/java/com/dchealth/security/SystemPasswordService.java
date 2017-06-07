@@ -26,8 +26,8 @@ public class SystemPasswordService {
 
 
     public static void main(String[] args) {
-        //cb869ff7955ab46704132e47a414bca9
-        String passwordAndSalt = enscriptPasswordWithSalt("d0f483017280403ce294950b9bf75ea4","mt1","123");
+        //1f400473bd7f5df0226132fb771fef8c
+        String passwordAndSalt = enscriptPasswordWithSalt("c892be33d7be4ba1b9d2f7032a5dd153","aaa123","aaa123aaa123");
         System.out.println(passwordAndSalt);
     }
 }

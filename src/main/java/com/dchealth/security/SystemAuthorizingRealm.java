@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Context;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +59,7 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new AuthenticationException("不错在的用户");
+			throw new AuthenticationException("不存在的用户");
 		}
 	}
 
