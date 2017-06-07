@@ -2,11 +2,9 @@ package com.dchealth.security;
 
 import com.dchealth.entity.YunUsers;
 import com.dchealth.facade.security.UserFacade;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.credential.SimpleCredentialsMatcher;
-import org.apache.shiro.crypto.hash.Md5Hash;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,18 +21,27 @@ public class HisCredentialsMatcher extends SimpleCredentialsMatcher {
     @Autowired
     private UserFacade userFacade ;
 
+    public UserFacade getUserFacade() {
+        return userFacade;
+    }
+
+    public void setUserFacade(UserFacade userFacade) {
+        this.userFacade = userFacade;
+    }
+
     @Override
     public boolean doCredentialsMatch(AuthenticationToken token, AuthenticationInfo info) {
         UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken)token ;
         String username = usernamePasswordToken.getUsername() ;
         char[] password1 = usernamePasswordToken.getPassword();
-        String password = password1.toString();
+        String password = new String(password1);
         try {
-            YunUsers yunUsers = userFacade.getYunUsersByUserName(username);
+            YunUsers yunUsers = userFacade.getYunUsersByUserId(username);
             String dbPass = yunUsers.getPassword() ;
-            String newPass = SystemPasswordService.enscriptPasswordWithSalt(info.getCredentials().toString(),yunUsers.getSalt());
+            String newPass = SystemPasswordService.enscriptPasswordWithSalt(yunUsers.getSalt(),username,password);
             return dbPass.equals(newPass);
         } catch (Exception e) {
+            e.printStackTrace();
             return false ;
         }
     }

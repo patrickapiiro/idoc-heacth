@@ -12,7 +12,6 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table(name = "yun_users", schema = "emhbase", catalog = "")
-@XmlRootElement
 public class YunUsers  {
     private long id;
     private String userName;
@@ -36,6 +35,8 @@ public class YunUsers  {
     private String rolename;
     private String salt ;
     private String password ;
+    private String hospitalName;
+    private String hospitalCode ;
 
     @Id
     @Column(name = "id")
@@ -252,6 +253,25 @@ public class YunUsers  {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+
+    @Column(name="hospital_name")
+    public String getHospitalName() {
+        return hospitalName;
+    }
+
+    public void setHospitalName(String hospitalName) {
+        this.hospitalName = hospitalName;
+    }
+
+    @Column(name="hospital_code")
+    public String getHospitalCode() {
+        return hospitalCode;
+    }
+
+    public void setHospitalCode(String hospitalCode) {
+        this.hospitalCode = hospitalCode;
     }
 
     @Override

@@ -5,11 +5,8 @@
  */
 package com.dchealth.security;
 import com.dchealth.entity.YunUsers;
-import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.util.UserUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -18,18 +15,14 @@ import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.cache.Cache;
 import org.apache.shiro.realm.AuthorizingRealm;
-import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.SimplePrincipalCollection;
-import org.eclipse.jetty.server.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,17 +45,18 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 	@Override
 	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authcToken) throws AuthenticationException {
 		UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
-
 		try {
-			YunUsers yunUsers = userFacade.getYunUsersByUserName(token.getUsername());
+			YunUsers yunUsers = userFacade.getYunUsersByUserId(token.getUsername());
 
 			if(yunUsers!=null){
 				return  new SimpleAuthenticationInfo(new Principal(yunUsers),token.getCredentials(),getName()) ;
 			}else{
+
 				return null ;
 			}
 
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new AuthenticationException("不错在的用户");
 		}
 	}
@@ -76,7 +70,7 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 		SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
 		info.addStringPermission("user:list");
 		try {
-			YunUsers yunUsers = userFacade.getYunUsersByUserName(principal.getLoginName());
+			YunUsers yunUsers = userFacade.getYunUsersByUserId(principal.getLoginName());
 			UserUtils.putCache("user",yunUsers);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -111,6 +105,8 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 	@PostConstruct
 	public void initCredentialsMatcher() {
         HisCredentialsMatcher matcher = new HisCredentialsMatcher() ;
+        matcher.setUserFacade(userFacade);
+
 		setCredentialsMatcher(matcher);
 	}
 	
@@ -145,6 +141,8 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 		private String id;
 		private String loginName;
 		private String name;
+		private String salt ;
+		private String dbPassword;
 		private Map<String, Object> cacheMap;
 
 		public String getId() {
@@ -155,6 +153,8 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 			this.id = String.valueOf(yunUsers.getId());
 			this.loginName = yunUsers.getUserId();
 			this.name = yunUsers.getUserName();
+			this.salt = yunUsers.getSalt();
+			this.dbPassword = yunUsers.getPassword();
 		}
 
 		public String getLoginName() {
@@ -172,5 +172,20 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 			return cacheMap;
 		}
 
+		public String getSalt() {
+			return salt;
+		}
+
+		public void setSalt(String salt) {
+			this.salt = salt;
+		}
+
+		public String getDbPassword() {
+			return dbPassword;
+		}
+
+		public void setDbPassword(String dbPassword) {
+			this.dbPassword = dbPassword;
+		}
 	}
 }

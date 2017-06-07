@@ -10,19 +10,13 @@ import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.SystemAuthorizingRealm;
 import com.google.common.collect.Maps;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.session.InvalidSessionException;
 import org.apache.shiro.subject.Subject;
-import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.sql.JoinType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,7 +40,7 @@ public class UserUtils{
 				Subject subject = SecurityUtils.getSubject();
 				SystemAuthorizingRealm.Principal principal = (SystemAuthorizingRealm.Principal)subject.getPrincipal();
 				if (principal!=null){
-					YunUsers users = userFacade.getYunUsersByUserName(principal.getLoginName());
+					YunUsers users = userFacade.getYunUsersByUserId(principal.getLoginName());
 					putCache(CACHE_USER, user);
 				}
 			}catch (UnavailableSecurityManagerException e) {
