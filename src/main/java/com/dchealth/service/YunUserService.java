@@ -5,12 +5,14 @@ import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.PasswordAndSalt;
 import com.dchealth.security.SystemPasswordService;
+import com.dchealth.util.UserUtils;
 import com.mysql.cj.x.protobuf.Mysqlx;
 import org.jboss.logging.annotations.Pos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -43,6 +45,18 @@ public class YunUserService {
         yunUsers.setPassword(passwordAndSalt.getPassword());
         yunUsers.setSalt(passwordAndSalt.getSalt());
         return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
+    }
+
+    /**
+     * 获取当前登录用户
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("current-user")
+    public YunUsers getCurrentUser() throws Exception {
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        return yunUsers;
     }
 
 }

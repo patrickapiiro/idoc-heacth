@@ -1,10 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="indexApp">
 <head>
     <meta charset="UTF-8">
     <title>首页</title>
+    <script src="asset/jquery-1.11.1.min.js"></script>
+    <script src="asset/angular/angular.js"></script>
 </head>
-<body>
+<script>
 
+    var indexApp = angular.module("indexApp",[]) ;
+
+    var indexCtrl =indexApp.controller("indexCtrl",['$scope','$http',function($scope,$http){
+
+
+        $scope.yunUserObj = {} ;
+
+        $scope.registYunUser = function(){
+            $scope.yunUserObj.userId=$scope.yunUserObj.userName;
+            $http.post("/api/yun-user/regist",$scope.yunUserObj).success(function(data){
+                console.log("注册成功!");
+            })
+        }
+
+    }])
+
+    $.extend({
+        postForm: function (url,formId,callback, error) {
+            if($("#"+formId).form("validate")) {
+                var dict = '{';
+                $($('#'+formId).serializeArray()).each(function (index, element) {
+                    if(element.value!=null && element.value!=''){
+                        dict=dict+'"'+element.name+'"'+':'+'"'+element.value+'",'
+                    }
+
+                })
+                dict = dict.substring(0, dict.length - 1);
+                dict=dict+'}'
+
+                return jQuery.ajax({
+                    cache: true,
+                    'type': 'POST',
+                    'url': url,
+                    'contentType': 'application/json',
+                    'data': dict,
+                    'dataType': 'json',
+                    'success': callback,
+                    'error': error
+                });
+            }else{
+                return false;
+            }
+        },
+        postRows: function (url,tableId,callback, error) {
+            $("#"+tableId).datagrid('endEdit', editRow);
+            var  rows=$('#'+tableId).datagrid('getRows');
+            return jQuery.ajax({
+                cache: true,
+                'type': 'POST',
+                'url': url,
+                'contentType': 'application/json',
+                'data': JSON.stringify(rows),
+                'dataType': 'json',
+                'success': callback,
+                'error': error
+            })
+        },
+        postJSON: function  (url, data, callback, error) {
+            return jQuery.ajax({
+                'type': 'POST',
+                'url': url,
+                'contentType': 'application/json',
+                'data': data,
+                'dataType': 'json',
+                'success': callback,
+                'error': error
+            });
+        }
+    })
+    var regitst=function(){
+        var uname = document.getElementById("userName");
+        var password = document.getElementById("password") ;
+        var obj= {} ;
+        obj.userName=uname.value;
+        obj.userId=uname.value;
+        obj.password=password.value;
+//        $.post("/api/yun-user/regist",JSON.stringify(obj),function(data){
+//            console.log(data);
+//        })
+        jQuery.ajax({
+            'type': 'POST',
+            'url': "/api/yun-user/regist",
+            'contentType': 'application/json',
+            'data': JSON.stringify(obj),
+            'dataType': 'json',
+            'success': function(){
+
+            },
+            'error': function(error){
+                console.log(error)
+            }
+        });
+    }
+</script>
+<body ng-controller="indexCtrl">
+
+<form>
+    <input type="name" id="userName" ng-model="yunUserObj.userName">
+    <input type="password" id="password" ng-model="yunUserObj.password">
+    <!--<button type="button" onclick="regitst();">注册</button>-->
+    <button type="button" ng-click="registYunUser();">注册</button>
+</form>
 </body>
 </html>

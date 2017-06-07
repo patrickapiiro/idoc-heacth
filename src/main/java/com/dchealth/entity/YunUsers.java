@@ -3,6 +3,8 @@ package com.dchealth.entity;
 import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -10,7 +12,8 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table(name = "yun_users", schema = "emhbase", catalog = "")
-public class YunUsers {
+@XmlRootElement
+public class YunUsers  {
     private long id;
     private String userName;
     private String userId;
