@@ -7,6 +7,8 @@ import com.dchealth.security.PasswordAndSalt;
 import com.dchealth.security.SystemPasswordService;
 import com.dchealth.util.UserUtils;
 import com.mysql.cj.x.protobuf.Mysqlx;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
 import org.jboss.logging.annotations.Pos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -81,12 +83,22 @@ public class YunUserService {
             PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(userId, newPassowrd);
             yunUsers.setPassword(passwordAndSalt.getPassword());
             yunUsers.setSalt(passwordAndSalt.getSalt());
+            Subject subject = SecurityUtils.getSubject();
+            subject.logout();
             return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
         }else{
             throw new Exception("原密码错误！");
         }
     }
 
+    @Produces("text/plain")
+    @POST
+    @Path("logout")
+    public Response logOut(){
+        Subject subject = SecurityUtils.getSubject();
+        subject.logout();
+        return Response.status(Response.Status.OK).entity("success").build();
+    }
     /**
      * 获取当前登录用户
      * @return
