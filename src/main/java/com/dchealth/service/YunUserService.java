@@ -1,22 +1,25 @@
 package com.dchealth.service;
 
+import com.dchealth.YunUserVO;
+import com.dchealth.entity.YunDiseaseList;
+import com.dchealth.entity.YunUserDisease;
+import com.dchealth.entity.YunUserDiseaseManager;
 import com.dchealth.entity.YunUsers;
-import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.PasswordAndSalt;
 import com.dchealth.security.SystemPasswordService;
 import com.dchealth.util.UserUtils;
-import com.mysql.cj.x.protobuf.Mysqlx;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
-import org.jboss.logging.annotations.Pos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by Administrator on 2017/6/6.
@@ -110,5 +113,58 @@ public class YunUserService {
         YunUsers yunUsers = UserUtils.getYunUsers();
         return yunUsers;
     }
+
+
+    /**
+     * 获取用户研究疾病、管理疾病信息
+     * @param userId
+     * @return
+     */
+    @GET
+    @Path("get-user-disease-info")
+    public YunUserVO getYunUserDiseaseInfo(@QueryParam("userId") String userId) throws Exception {
+        YunUserVO yunUserVO = new YunUserVO() ;
+        YunUsers yunUsers = getCurrentUser() ;
+        yunUserVO.setYunUsers(yunUsers);
+        String hqlDisease = "select di from YunUserDisease as du,YunDiseaseList di where di.dcode=du.dcode and  d.userId="+userId;
+        List<YunDiseaseList> yunUserDisease = userFacade.createQuery(YunDiseaseList.class,hqlDisease,new ArrayList<Object>()).getResultList();
+        yunUserVO.setYunUserDisease(yunUserDisease);
+        String diseaseManagerHql = "from YunUserDiseaseManager dm , YunDiseaseList di where di.dcode=dm.dcode and dm.userId="+userId;
+        List<YunDiseaseList> yunUserDiseaseManagers = userFacade.createQuery(YunDiseaseList.class,diseaseManagerHql,new ArrayList<Object>()).getResultList();
+        yunUserVO.setYunUserDiseaseManager(yunUserDiseaseManagers);
+        return yunUserVO;
+    }
+
+
+    @POST
+    @Transactional
+    @Path("merge-user-disease-info")
+    public Response mergeYunUserDiseaseInfo(YunUserVO yunUserVO){
+        YunUsers yunUsers = yunUserVO.getYunUsers() ;
+        List<YunDiseaseList> yunUserDiseasese = yunUserVO.getYunUserDisease();
+        List<YunDiseaseList> yunUserDiseaseManager = yunUserVO.getYunUserDiseaseManager();
+        String hql = "delete from YunUserDisease as yd where yd.userId="+yunUsers.getId() ;
+        String hql2 = "delete from YunUserDiseaseManager as ym where ym.userId="+yunUsers.getId() ;
+
+        userFacade.getEntityManager().createQuery(hql).executeUpdate() ;
+        userFacade.getEntityManager().createQuery(hql2).executeUpdate();
+
+
+        for(YunDiseaseList diseaseList:yunUserDiseasese){
+            YunUserDisease yunUserDisease = new YunUserDisease() ;
+            yunUserDisease.setUserId(yunUsers.getId());
+            yunUserDisease.setDcode(diseaseList.getDcode());
+            userFacade.merge(yunUserDisease) ;
+        }
+
+        for (YunDiseaseList yunDiseaseList:yunUserDiseaseManager){
+            YunUserDiseaseManager yunUserDiseaseManager1 = new YunUserDiseaseManager() ;
+            yunUserDiseaseManager1.setUserId(yunUsers.getId());
+            yunUserDiseaseManager1.setDcode(yunDiseaseList.getDcode());
+            userFacade.merge(yunUserDiseaseManager1) ;
+        }
+        return Response.status(Response.Status.OK).entity(yunUsers).build();
+    }
+
 
 }

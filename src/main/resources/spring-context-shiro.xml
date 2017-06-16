@@ -14,7 +14,7 @@
     <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
         <property name="securityManager" ref="securityManager"/>
         <property name="loginUrl" value="/api/login"/>
-        <property name="successUrl" value="/login/success"/>
+        <property name="successUrl" value="/api/login/success"/>
         <property name="filters">
             <map>
                 <entry key="authc" value-ref="formAuthenticationFilter"/>
@@ -22,10 +22,17 @@
         </property>
         <property name="filterChainDefinitions">
             <value>
-                /static/** = anon
-                /userfiles/** = anon
+                /frame/** = anon
+                /Frame/** = anon
+                /app/** = anon
+                /asset/** = anon
+                /css/** = anon
+                /images/** = anon
+                /js/** = anon
+                /sign-up.html = anon
                 /api/yun-user/regist=anon
                 /login.html=anon
+                /api/hospital=anon
                 /api/login=authc
                 /logout = logout
                 /api/**=authc
