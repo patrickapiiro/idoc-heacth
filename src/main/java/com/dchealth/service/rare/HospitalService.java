@@ -1,4 +1,4 @@
-package com.dchealth.service;
+package com.dchealth.service.rare;
 
 import com.dchealth.entity.HospitalDict;
 import com.dchealth.facade.common.BaseFacade;

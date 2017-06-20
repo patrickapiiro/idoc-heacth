@@ -1,4 +1,4 @@
-package com.dchealth;
+package com.dchealth.VO;
 
 import com.dchealth.entity.YunDiseaseList;
 import com.dchealth.entity.YunUsers;

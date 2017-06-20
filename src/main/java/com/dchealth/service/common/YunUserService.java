@@ -1,6 +1,6 @@
-package com.dchealth.service;
+package com.dchealth.service.common;
 
-import com.dchealth.YunUserVO;
+import com.dchealth.VO.YunUserVO;
 import com.dchealth.entity.YunDiseaseList;
 import com.dchealth.entity.YunUserDisease;
 import com.dchealth.entity.YunUserDiseaseManager;
@@ -94,6 +94,28 @@ public class YunUserService {
         }
     }
 
+
+    /**
+     * 重置用户密码
+     * @param userId
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Transactional
+    @Path("rest-pwd")
+    public Response restPassword(@QueryParam("userId")String userId) throws Exception {
+        YunUsers yunUsers = userFacade.getYunUsersByUserId(userId) ;
+        if (yunUsers!=null){
+            PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(userId, "123456");
+            yunUsers.setPassword(passwordAndSalt.getPassword());
+            yunUsers.setSalt(passwordAndSalt.getSalt());
+            userFacade.merge(yunUsers);
+        }
+
+        return Response.status(Response.Status.OK).entity(yunUsers).build();
+    }
+
     @Produces("text/plain")
     @POST
     @Path("logout")
@@ -124,12 +146,12 @@ public class YunUserService {
     @Path("get-user-disease-info")
     public YunUserVO getYunUserDiseaseInfo(@QueryParam("userId") String userId) throws Exception {
         YunUserVO yunUserVO = new YunUserVO() ;
-        YunUsers yunUsers = getCurrentUser() ;
+        YunUsers yunUsers = userFacade.getYunUserById(Long.parseLong(userId)) ;
         yunUserVO.setYunUsers(yunUsers);
-        String hqlDisease = "select di from YunUserDisease as du,YunDiseaseList di where di.dcode=du.dcode and  d.userId="+userId;
+        String hqlDisease = "select di from YunUserDisease as du,YunDiseaseList di where di.dcode=du.dcode and  du.userId="+userId;
         List<YunDiseaseList> yunUserDisease = userFacade.createQuery(YunDiseaseList.class,hqlDisease,new ArrayList<Object>()).getResultList();
         yunUserVO.setYunUserDisease(yunUserDisease);
-        String diseaseManagerHql = "from YunUserDiseaseManager dm , YunDiseaseList di where di.dcode=dm.dcode and dm.userId="+userId;
+        String diseaseManagerHql = "select di from YunUserDiseaseManager dm,YunDiseaseList di where di.dcode=dm.dcode and dm.userId="+userId;
         List<YunDiseaseList> yunUserDiseaseManagers = userFacade.createQuery(YunDiseaseList.class,diseaseManagerHql,new ArrayList<Object>()).getResultList();
         yunUserVO.setYunUserDiseaseManager(yunUserDiseaseManagers);
         return yunUserVO;
@@ -166,5 +188,20 @@ public class YunUserService {
         return Response.status(Response.Status.OK).entity(yunUsers).build();
     }
 
+
+    /**
+     * 获取用户列表，肯根据用户状态，用户状态不传递或者传递为空则获取全部用户
+     * @param loginFlag
+     * @return
+     */
+    @GET
+    @Path("user-list")
+    public List<YunUsers> listYunUsersByFlags(@QueryParam("loginFlag") String loginFlag){
+        String hql = "from YunUsers as user where 1=1 " ;
+        if(!"".equals(loginFlag)&&loginFlag!=null){
+            hql+=" and user.loginFlags='"+loginFlag+"'";
+        }
+        return userFacade.createQuery(YunUsers.class,hql ,new ArrayList<Object>()).getResultList() ;
+    }
 
 }

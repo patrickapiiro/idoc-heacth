@@ -23,4 +23,21 @@ public class UserFacade extends BaseFacade {
             throw new Exception("不存在的用户名");
         }
     }
+
+
+    /**
+     * 根据ID获取用户信息
+     * @param id
+     * @return
+     * @throws Exception
+     */
+    public YunUsers getYunUserById(long id) throws Exception {
+        String hql = "from YunUsers as user where user.id="+id;
+        List<YunUsers> resultList = createQuery(YunUsers.class, hql, new ArrayList<>()).getResultList();
+        if(resultList.size()>0){
+            return resultList.get(0);
+        }else{
+            throw new Exception("不存在的用户名");
+        }
+    }
 }

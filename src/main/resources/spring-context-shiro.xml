@@ -34,8 +34,8 @@
                 /login.html=anon
                 /api/hospital=anon
                 /api/login=authc
-                /logout = logout
                 /api/**=authc
+                /logout = logout
                 /index.html=anon
                 /**=authc
             </value>

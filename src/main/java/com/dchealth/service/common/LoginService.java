@@ -1,4 +1,4 @@
-package com.dchealth.service;
+package com.dchealth.service.common;
 
 import com.dchealth.entity.YunUsers;
 import com.dchealth.util.UserUtils;
