@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "yun_release_templet", schema = "emhbase", catalog = "")
 public class YunReleaseTemplet {
-    private Long id;
+    private String id;
     private String hstatus;
     private String hversion;
     private String dcode;
@@ -22,11 +22,11 @@ public class YunReleaseTemplet {
 
     @Id
     @Column(name = "id")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

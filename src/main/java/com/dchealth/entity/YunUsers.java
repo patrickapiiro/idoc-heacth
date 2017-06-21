@@ -1,10 +1,9 @@
 package com.dchealth.entity;
 
-import org.springframework.stereotype.Component;
+
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlRootElement;
-import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -13,7 +12,7 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "yun_users", schema = "emhbase", catalog = "")
 public class YunUsers  {
-    private long id;
+    private String id;
     private String userName;
     private String userId;
     private String loginFlags;
@@ -40,11 +39,13 @@ public class YunUsers  {
 
     @Id
     @Column(name = "id")
-    public long getId() {
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
+    public String getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -307,28 +308,5 @@ public class YunUsers  {
         return true;
     }
 
-    @Override
-    public int hashCode() {
-        int result = (int) (id ^ (id >>> 32));
-        result = 31 * result + (userName != null ? userName.hashCode() : 0);
-        result = 31 * result + (userId != null ? userId.hashCode() : 0);
-        result = 31 * result + (loginFlags != null ? loginFlags.hashCode() : 0);
-        result = 31 * result + (deptId != null ? deptId.hashCode() : 0);
-        result = 31 * result + (sex != null ? sex.hashCode() : 0);
-        result = 31 * result + (nation != null ? nation.hashCode() : 0);
-        result = 31 * result + (mobile != null ? mobile.hashCode() : 0);
-        result = 31 * result + (tel != null ? tel.hashCode() : 0);
-        result = 31 * result + (email != null ? email.hashCode() : 0);
-        result = 31 * result + (birthDate != null ? birthDate.hashCode() : 0);
-        result = 31 * result + (createDate != null ? createDate.hashCode() : 0);
-        result = 31 * result + (modifyDate != null ? modifyDate.hashCode() : 0);
-        result = 31 * result + (practiceQualificationId != null ? practiceQualificationId.hashCode() : 0);
-        result = 31 * result + (extkey != null ? extkey.hashCode() : 0);
-        result = 31 * result + (title != null ? title.hashCode() : 0);
-        result = 31 * result + (researchDirection != null ? researchDirection.hashCode() : 0);
-        result = 31 * result + (signature != null ? signature.hashCode() : 0);
-        result = 31 * result + (picture != null ? picture.hashCode() : 0);
-        result = 31 * result + (rolename != null ? rolename.hashCode() : 0);
-        return result;
-    }
+
 }

@@ -12,7 +12,7 @@ import javax.persistence.*;
 public class YunUserDisease {
     private String id;
     private String dcode;
-    private Long userId;
+    private String userId;
 
     @Id
     @Column(name = "id")
@@ -38,11 +38,11 @@ public class YunUserDisease {
 
     @Basic
     @Column(name = "user_id")
-    public Long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 

@@ -87,7 +87,7 @@ public class BaseFacade {
      * @return
      */
     public <T> void remove(T entity) {
-        this.getEntityManager().remove(entity);
+        this.entityManager.remove(entity);
     }
 
     /**
@@ -96,7 +96,7 @@ public class BaseFacade {
      */
     public void remove(List<Object> list) {
         for (Object obj : list) {
-            this.getEntityManager().remove(obj);
+            this.entityManager.remove(obj);
         }
     }
 
@@ -108,7 +108,10 @@ public class BaseFacade {
      */
     public void remove(Class<?> entityClass, List<Long> ids) {
         for (Long pk : ids) {
-            this.getEntityManager().remove(entityManager.merge(entityManager.getReference(entityClass, pk)));
+            Object merge = entityManager.merge(entityManager.getReference(entityClass, pk));
+            if(merge!=null){
+                this.entityManager.remove(merge);
+            }
         }
     }
 
@@ -120,10 +123,23 @@ public class BaseFacade {
      */
     public void removeByStringIds(Class<?> entityClass, List<String> ids) {
         for (String pk : ids) {
-            this.getEntityManager().remove(entityManager.find(entityClass, pk));
+            Object o = entityManager.find(entityClass, pk);
+            if(o!=null){
+                this.entityManager.remove(o);
+            }
         }
     }
 
+
+    /**
+     * 根据传入的hql删除
+     * @param hql
+     * @return
+     */
+    public int removeByHql(String hql){
+        int i = this.entityManager.createQuery(hql).executeUpdate();
+        return i;
+    }
 
     /**
      * 此方法 获取一个范围内的T对象
@@ -133,9 +149,9 @@ public class BaseFacade {
      * @return
      */
     public <T> List<T> findRange(T entity, int[] range) {
-        CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();
+        CriteriaQuery cq = entityManager.getCriteriaBuilder().createQuery();
         cq.select(cq.from(entity.getClass()));
-        Query q = getEntityManager().createQuery(cq);
+        Query q = entityManager.createQuery(cq);
         q.setMaxResults(range[1] - range[0]);
         q.setFirstResult(range[0]);
         return q.getResultList();
@@ -148,10 +164,10 @@ public class BaseFacade {
      * @return
      */
     public <T> int count(T entity) {
-        CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();
+        CriteriaQuery cq = entityManager.getCriteriaBuilder().createQuery();
         javax.persistence.criteria.Root<T> rt = cq.from(entity.getClass());
-        cq.select(getEntityManager().getCriteriaBuilder().count(rt));
-        Query q = getEntityManager().createQuery(cq);
+        cq.select(entityManager.getCriteriaBuilder().count(rt));
+        Query q = entityManager.createQuery(cq);
         return ((Long) q.getSingleResult()).intValue();
     }
 
@@ -179,7 +195,7 @@ public class BaseFacade {
         //获取实体名称
         String entityName = entityClass.getSimpleName();
         //创建查询
-        TypedQuery query = this.getEntityManager().createQuery(" from " + entityName
+        TypedQuery query = this.entityManager.createQuery(" from " + entityName
                 + " as o " + whereJpql + this.buildOrderby(orderBy), entityClass);
 
         //为查询字符串中的参数设置值
@@ -209,7 +225,7 @@ public class BaseFacade {
         //获取实体名称
         String entityName = entityClass.getSimpleName();
         //创建查询
-        TypedQuery query = this.getEntityManager().createQuery("select o from " + entityName
+        TypedQuery query = this.entityManager.createQuery("select o from " + entityName
                 + " as o " + whereJpql + this.buildOrderby(orderBy), entityClass);
 
         //为查询字符串中的参数设置值
@@ -658,11 +674,6 @@ public class BaseFacade {
             propagate(e);
         }
         return 0;
-    }
-
-    public EntityManager getEntityManager() {
-        this.entityManager = entityManagerFactory.createEntityManager();
-        return this.entityManager;
     }
 
     @PersistenceContext

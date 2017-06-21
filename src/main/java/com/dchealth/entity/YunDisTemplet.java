@@ -9,33 +9,33 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "yun_dis_templet", schema = "emhbase", catalog = "")
 public class YunDisTemplet {
-    private Long id;
-    private Long doctorId;
+    private String id;
+    private String doctorId;
     private String dcode;
     private String mblx;
     private String title;
     private String mbsj;
     private String note;
     private Timestamp modifyDate;
-    private Long deptId;
+    private String deptId;
 
     @Id
     @Column(name = "id")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
     @Basic
     @Column(name = "doctor_id")
-    public Long getDoctorId() {
+    public String getDoctorId() {
         return doctorId;
     }
 
-    public void setDoctorId(Long doctorId) {
+    public void setDoctorId(String doctorId) {
         this.doctorId = doctorId;
     }
 
@@ -101,11 +101,11 @@ public class YunDisTemplet {
 
     @Basic
     @Column(name = "dept_id")
-    public Long getDeptId() {
+    public String getDeptId() {
         return deptId;
     }
 
-    public void setDeptId(Long deptId) {
+    public void setDeptId(String deptId) {
         this.deptId = deptId;
     }
 

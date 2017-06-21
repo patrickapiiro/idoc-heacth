@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "yun_value_format", schema = "emhbase", catalog = "")
 public class YunValueFormat {
-    private Long id;
+    private String id;
     private String title;
     private String dict;
     private String relyon;
@@ -20,11 +20,11 @@ public class YunValueFormat {
 
     @Id
     @Column(name = "id")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

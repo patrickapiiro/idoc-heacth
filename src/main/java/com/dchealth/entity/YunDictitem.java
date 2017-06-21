@@ -1,5 +1,7 @@
 package com.dchealth.entity;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 
 /**
@@ -8,30 +10,32 @@ import javax.persistence.*;
 @Entity
 @Table(name = "yun_dictitem", schema = "emhbase", catalog = "")
 public class YunDictitem {
-    private Long serialNo;
-    private Long typeIdDm;
+    private String serialNo;
+    private String typeIdDm;
     private String itemCode;
     private String itemName;
     private String inputCode;
 
-    @Id
-    @Column(name = "serial_no")
-    public Long getSerialNo() {
-        return serialNo;
+    public void setSerialNo(String serialNo) {
+        this.serialNo = serialNo;
     }
 
-    public void setSerialNo(Long serialNo) {
-        this.serialNo = serialNo;
+    public void setTypeIdDm(String typeIdDm) {
+        this.typeIdDm = typeIdDm;
+    }
+
+    @Id
+    @Column(name = "serial_no")
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
+    public String getSerialNo() {
+        return serialNo;
     }
 
     @Basic
     @Column(name = "type_id_dm")
-    public Long getTypeIdDm() {
+    public String getTypeIdDm() {
         return typeIdDm;
-    }
-
-    public void setTypeIdDm(Long typeIdDm) {
-        this.typeIdDm = typeIdDm;
     }
 
     @Basic

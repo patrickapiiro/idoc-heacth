@@ -43,7 +43,7 @@ public class YunUserService {
     public Response registYunUser(YunUsers yunUsers){
 
         long id = new Date().getTime();
-        yunUsers.setId(id);
+        yunUsers.setId(String.valueOf(id));
         PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
         yunUsers.setPassword(passwordAndSalt.getPassword());
         yunUsers.setSalt(passwordAndSalt.getSalt());
@@ -60,11 +60,13 @@ public class YunUserService {
     @Transactional
     @Path("update")
     public Response updateYunUser(YunUsers yunUsers) throws Exception {
-        long id = yunUsers.getId();
-        if(id==0){
+        String id = yunUsers.getId();
+        if(id==null||"".equals(id)){
+            System.out.println(id);
             throw new Exception("获取不到原信息的ID");
         }
-        return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
+        YunUsers users = userFacade.merge(yunUsers);
+        return Response.status(Response.Status.OK).entity(users).build();
     }
 
     /**
@@ -168,8 +170,8 @@ public class YunUserService {
         String hql = "delete from YunUserDisease as yd where yd.userId="+yunUsers.getId() ;
         String hql2 = "delete from YunUserDiseaseManager as ym where ym.userId="+yunUsers.getId() ;
 
-        userFacade.getEntityManager().createQuery(hql).executeUpdate() ;
-        userFacade.getEntityManager().createQuery(hql2).executeUpdate();
+        userFacade.removeByHql(hql);
+        userFacade.removeByHql(hql2);;
 
 
         for(YunDiseaseList diseaseList:yunUserDiseasese){
@@ -201,7 +203,8 @@ public class YunUserService {
         if(!"".equals(loginFlag)&&loginFlag!=null){
             hql+=" and user.loginFlags='"+loginFlag+"'";
         }
-        return userFacade.createQuery(YunUsers.class,hql ,new ArrayList<Object>()).getResultList() ;
+        List<YunUsers> resultList = userFacade.createQuery(YunUsers.class, hql, new ArrayList<Object>()).getResultList();
+        return resultList;
     }
 
 }

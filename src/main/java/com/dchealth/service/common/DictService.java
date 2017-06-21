@@ -8,6 +8,7 @@ import com.dchealth.util.IDUtils;
 import org.eclipse.persistence.annotations.QueryRedirectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.*;
@@ -21,6 +22,7 @@ import java.util.List;
 @Controller
 @Produces("application/json")
 @Path("dict")
+@Service
 public class DictService {
 
 
@@ -35,10 +37,13 @@ public class DictService {
      */
     @GET
     @Path("list-type-by-name")
-    public List<YunDicttype> listDictType(@QueryParam("typeName") String typeName) {
+    public List<YunDicttype> listDictType(@QueryParam("typeName") String typeName,@QueryParam("userId")String userId) {
         String hql = "from YunDicttype where 1=1 ";
         if (typeName != null && !"".equals(typeName)) {
             hql += " and typeName like '%" + typeName + "%'";
+        }
+        if (userId != null && !"".equals(userId)) {
+            hql += " and userId = '" + userId + "'";
         }
         return baseFacade.createQuery(YunDicttype.class, hql, new ArrayList<Object>()).getResultList();
 }
@@ -64,11 +69,9 @@ public class DictService {
      * @return
      */
     @Path("add-new-type")
-    @POST
     @Transactional
+    @POST
     public Response addDictType(YunDicttype yunDicttype) {
-        long id = IDUtils.genItemId();
-        yunDicttype.setTypeId(id);
         YunDicttype dicttype = baseFacade.merge(yunDicttype);
         return Response.status(Response.Status.OK).entity(dicttype).build();
     }
@@ -84,9 +87,6 @@ public class DictService {
     @Transactional
     @Path("add-new-item")
     public Response addDictItem(YunDictitem yunDictitem) {
-        if (yunDictitem.getSerialNo() == 0 || yunDictitem.getSerialNo() == null) {
-            yunDictitem.setSerialNo(IDUtils.genItemId());
-        }
         YunDictitem merge = baseFacade.merge(yunDictitem);
         return Response.status(Response.Status.OK).entity(merge).build();
     }
@@ -101,9 +101,6 @@ public class DictService {
     @Path("add-new-items")
     public Response addDictItmes(List<YunDictitem> yunDictitems) {
         for (YunDictitem item : yunDictitems) {
-            if (item.getSerialNo() == 0 || item.getSerialNo() == null) {
-                item.setSerialNo(IDUtils.genItemId());
-            }
             baseFacade.merge(item);
         }
         return Response.status(Response.Status.OK).entity(yunDictitems).build();
@@ -130,15 +127,30 @@ public class DictService {
      * @param typeId
      * @return
      */
-    @Transactional
     @POST
+    @Transactional
     @Path("del-type")
     public Response removeDictType(@QueryParam("typeId")String typeId){
+        try {
+            String itemHql ="from YunDictitem as item where item.typeIdDm='"+typeId+"'";
+            List<YunDictitem> yunDictitems = baseFacade.createQuery(YunDictitem.class,itemHql,new ArrayList<Object>()).getResultList();
+            List<String> itemIds = new ArrayList<String>();
+            for(YunDictitem dictitem:yunDictitems){
+                itemIds.add(dictitem.getSerialNo());
+            }
 
-        String delItemHql = "delete YunDictitem as item where item.typeIdDm='"+typeId+"'" ;
-        baseFacade.getEntityManager().createQuery(delItemHql).executeUpdate();
-        String delHql = "delete YunDicttype as type where typeId='"+typeId+"'" ;
-        baseFacade.getEntityManager().createQuery(delHql).executeUpdate();
+            String typeHql = "from YunDicttype as type where type.typeId='"+typeId+"'";
+            List<YunDicttype> yunDicttypes = baseFacade.createQuery(YunDicttype.class,typeHql,new ArrayList<Object>()).getResultList();
+            List<String> typeIds = new ArrayList<>() ;
+            for (YunDicttype dicttype:yunDicttypes){
+                typeIds.add(dicttype.getTypeId()) ;
+            }
+            baseFacade.removeByStringIds(YunDictitem.class,itemIds);
+            baseFacade.removeByStringIds(YunDicttype.class,typeIds);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
         return Response.status(Response.Status.OK).build();
     }
 

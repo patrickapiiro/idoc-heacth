@@ -1,5 +1,7 @@
 package com.dchealth.entity;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 
 /**
@@ -8,19 +10,21 @@ import javax.persistence.*;
 @Entity
 @Table(name = "yun_dicttype", schema = "emhbase", catalog = "")
 public class YunDicttype {
-    private Long typeId;
+    private String typeId;
     private String typeName;
-    private Long userId;
-    private Long deptId;
+    private String userId;
+    private String deptId;
+
+    public void setTypeId(String typeId) {
+        this.typeId = typeId;
+    }
 
     @Id
     @Column(name = "type_id")
-    public Long getTypeId() {
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
+    public String getTypeId() {
         return typeId;
-    }
-
-    public void setTypeId(Long typeId) {
-        this.typeId = typeId;
     }
 
     @Basic
@@ -35,21 +39,21 @@ public class YunDicttype {
 
     @Basic
     @Column(name = "user_id")
-    public Long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
     @Basic
     @Column(name = "dept_id")
-    public Long getDeptId() {
+    public String getDeptId() {
         return deptId;
     }
 
-    public void setDeptId(Long deptId) {
+    public void setDeptId(String deptId) {
         this.deptId = deptId;
     }
 

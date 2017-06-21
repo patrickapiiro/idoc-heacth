@@ -46,7 +46,6 @@ public class TimeService {
     @Transactional
     public YunUsers addUser(){
         YunUsers users = new YunUsers();
-        users.setId(11111111);
         users.setUserName("nihao test ");
         return baseFacade.merge(users);
     }

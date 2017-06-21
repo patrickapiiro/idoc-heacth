@@ -3,6 +3,7 @@ package com.dchealth.service.rare;
 import com.dchealth.entity.YunDiseaseList;
 import com.dchealth.entity.YunUserDisease;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.util.IDUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +51,7 @@ public class DiseaseService {
             hql+=" and list.bw = '"+xt+"'" ;
         }
 
-        return baseFacade.findAll(YunDiseaseList.class) ;
+        return baseFacade.createQuery(YunDiseaseList.class,hql,new ArrayList<Object>()).getResultList() ;
     }
 
 
@@ -63,15 +64,6 @@ public class DiseaseService {
     @Path("add-new")
     @Transactional
     public Response mergeYunDiseaseList(YunDiseaseList yunDiseaseList){
-        String hql = "select max(a.id) from YunDiseaseList a " ;
-        long id = 0 ;
-        List<Integer> resultList = baseFacade.createQuery(Integer.class, hql, new ArrayList<Object>()).getResultList();
-        if(resultList.size()==0){
-            id=0;
-        }else{
-            id=resultList.get(0)+1;
-        }
-        yunDiseaseList.setId(id);
         YunDiseaseList merge = baseFacade.merge(yunDiseaseList);
         return Response.status(Response.Status.OK).entity(merge).build();
     }

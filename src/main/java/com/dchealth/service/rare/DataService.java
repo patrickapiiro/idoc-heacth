@@ -73,12 +73,6 @@ public class DataService {
     @Path("merge-value")
     @Transactional
     public Response addYunValue(YunValue yunValue){
-        Long id = yunValue.getId();
-        if(id==0){
-            id= IDUtils.genItemId();
-            yunValue.setId(id);
-        }
-
         return Response.status(Response.Status.OK).entity(baseFacade.merge(yunValue)).build();
     }
 
@@ -93,10 +87,10 @@ public class DataService {
     public Response delYunValue(@QueryParam("id") String id){
         //删除元数据格式化
         //删除元数据
-        List<Long> ids = new ArrayList<>() ;
-        ids.add(Long.parseLong(id));
-        baseFacade.remove(YunValueFormat.class,ids);
-        baseFacade.remove(YunValue.class,ids);
+        List<String> ids = new ArrayList<>() ;
+        ids.add(id);
+        baseFacade.removeByStringIds(YunValueFormat.class,ids);
+        baseFacade.removeByStringIds(YunValue.class,ids);
         return Response.status(Response.Status.OK).build();
     }
 
@@ -110,7 +104,7 @@ public class DataService {
     @GET
     @Path("value-data-format")
     public YunDataFormatVo getYunDataFormatVO(@QueryParam("dataId") String dataId) throws IOException, JSONException {
-        Long id = Long.parseLong(dataId);
+        String id = dataId;
         YunValueFormat yunValueFormat = baseFacade.get(YunValueFormat.class, id);
         DataElementFormat dataElement = (DataElementFormat) JSONUtil.JSONToObj(yunValueFormat.getFormat(), DataElementFormat.class);
         YunDataFormatVo yunDataFormatVo = new YunDataFormatVo() ;
@@ -140,10 +134,10 @@ public class DataService {
     @Transactional
     @Path("merge-value-data-format")
     public Response mergeDataFormat(YunDataFormatVo yunDataFormatVo) throws IOException, JSONException {
-        YunValueFormat yunValueFormat = baseFacade.get(YunValueFormat.class,Long.parseLong(yunDataFormatVo.getId()));
+        YunValueFormat yunValueFormat = baseFacade.get(YunValueFormat.class,yunDataFormatVo.getId());
         if(yunValueFormat==null){
             yunValueFormat = new YunValueFormat() ;
-            yunValueFormat.setId(Long.valueOf(yunDataFormatVo.getId()));
+            yunValueFormat.setId(yunDataFormatVo.getId());
         }
         yunValueFormat.setDict(yunDataFormatVo.getDict());
         yunValueFormat.setLevel(yunDataFormatVo.getLevel());
