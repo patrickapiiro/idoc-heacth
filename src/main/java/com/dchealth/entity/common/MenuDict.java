@@ -14,6 +14,8 @@ public class MenuDict {
     private String menuName;
     private String path;
     private String status;
+    private String parentId ;
+
 
     @Id
     @Column(name = "id")
@@ -55,6 +57,16 @@ public class MenuDict {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    @Basic
+    @Column(name="parent_id")
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
     }
 
     @Override

@@ -30,8 +30,8 @@ public class UserFacade extends BaseFacade {
      * @return
      * @throws Exception
      */
-    public YunUsers getYunUserById(long id) throws Exception {
-        String hql = "from YunUsers as user where user.id="+id;
+    public YunUsers getYunUserById(String id) throws Exception {
+        String hql = "from YunUsers as user where user.id='"+id+"'";
         List<YunUsers> resultList = createQuery(YunUsers.class, hql, new ArrayList<>()).getResultList();
         if(resultList.size()>0){
             return resultList.get(0);

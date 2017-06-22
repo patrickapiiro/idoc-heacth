@@ -148,12 +148,12 @@ public class YunUserService {
     @Path("get-user-disease-info")
     public YunUserVO getYunUserDiseaseInfo(@QueryParam("userId") String userId) throws Exception {
         YunUserVO yunUserVO = new YunUserVO() ;
-        YunUsers yunUsers = userFacade.getYunUserById(Long.parseLong(userId)) ;
+        YunUsers yunUsers = userFacade.getYunUserById(userId) ;
         yunUserVO.setYunUsers(yunUsers);
-        String hqlDisease = "select di from YunUserDisease as du,YunDiseaseList di where di.dcode=du.dcode and  du.userId="+userId;
+        String hqlDisease = "select di from YunUserDisease as du,YunDiseaseList di where di.dcode=du.dcode and  du.userId='"+userId+"'";
         List<YunDiseaseList> yunUserDisease = userFacade.createQuery(YunDiseaseList.class,hqlDisease,new ArrayList<Object>()).getResultList();
         yunUserVO.setYunUserDisease(yunUserDisease);
-        String diseaseManagerHql = "select di from YunUserDiseaseManager dm,YunDiseaseList di where di.dcode=dm.dcode and dm.userId="+userId;
+        String diseaseManagerHql = "select di from YunUserDiseaseManager dm,YunDiseaseList di where di.dcode=dm.dcode and dm.userId='"+userId+"'";
         List<YunDiseaseList> yunUserDiseaseManagers = userFacade.createQuery(YunDiseaseList.class,diseaseManagerHql,new ArrayList<Object>()).getResultList();
         yunUserVO.setYunUserDiseaseManager(yunUserDiseaseManagers);
         return yunUserVO;
@@ -167,8 +167,8 @@ public class YunUserService {
         YunUsers yunUsers = yunUserVO.getYunUsers() ;
         List<YunDiseaseList> yunUserDiseasese = yunUserVO.getYunUserDisease();
         List<YunDiseaseList> yunUserDiseaseManager = yunUserVO.getYunUserDiseaseManager();
-        String hql = "delete from YunUserDisease as yd where yd.userId="+yunUsers.getId() ;
-        String hql2 = "delete from YunUserDiseaseManager as ym where ym.userId="+yunUsers.getId() ;
+        String hql = "delete from YunUserDisease as yd where yd.userId='"+yunUsers.getId()+"'" ;
+        String hql2 = "delete from YunUserDiseaseManager as ym where ym.userId='"+yunUsers.getId()+"'" ;
 
         userFacade.removeByHql(hql);
         userFacade.removeByHql(hql2);
