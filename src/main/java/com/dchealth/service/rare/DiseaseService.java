@@ -1,9 +1,7 @@
 package com.dchealth.service.rare;
 
-import com.dchealth.entity.YunDiseaseList;
-import com.dchealth.entity.YunUserDisease;
+import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.facade.common.BaseFacade;
-import com.dchealth.util.IDUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;

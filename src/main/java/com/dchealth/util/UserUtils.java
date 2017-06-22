@@ -5,7 +5,7 @@
  */
 package com.dchealth.util;
 
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.SystemAuthorizingRealm;
 import com.google.common.collect.Maps;
@@ -15,7 +15,6 @@ import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.session.InvalidSessionException;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;

@@ -1,10 +1,9 @@
 package com.dchealth.VO;
 
-import com.dchealth.entity.YunDiseaseList;
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.rare.YunDiseaseList;
+import com.dchealth.entity.common.YunUsers;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,8 +1,7 @@
 package com.dchealth.facade.security;
 
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.common.BaseFacade;
-import org.apache.commons.collections.ArrayStack;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

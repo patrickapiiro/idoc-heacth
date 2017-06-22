@@ -1,4 +1,4 @@
-package com.dchealth.entity;
+package com.dchealth.entity.rare;
 
 import org.hibernate.annotations.GenericGenerator;
 

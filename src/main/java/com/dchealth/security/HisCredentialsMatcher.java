@@ -1,6 +1,6 @@
 package com.dchealth.security;
 
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.security.UserFacade;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;

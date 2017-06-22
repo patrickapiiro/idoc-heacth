@@ -1,9 +1,8 @@
 package com.dchealth.service.rare;
 
-import com.dchealth.entity.HospitalDict;
+import com.dchealth.entity.common.HospitalDict;
 import com.dchealth.facade.common.BaseFacade;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 

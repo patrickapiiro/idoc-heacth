@@ -1,10 +1,9 @@
 package com.dchealth.service.common;
 
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.util.UserUtils;
 import org.apache.shiro.authc.IncorrectCredentialsException;
 import org.apache.shiro.authc.UnknownAccountException;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Controller;
 
 import javax.servlet.ServletException;

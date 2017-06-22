@@ -1,11 +1,8 @@
 package com.dchealth.service.common;
 
-import com.dchealth.entity.DictType;
-import com.dchealth.entity.YunDictitem;
-import com.dchealth.entity.YunDicttype;
+import com.dchealth.entity.common.YunDictitem;
+import com.dchealth.entity.common.YunDicttype;
 import com.dchealth.facade.common.BaseFacade;
-import com.dchealth.util.IDUtils;
-import org.eclipse.persistence.annotations.QueryRedirectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
@@ -116,10 +113,9 @@ public class DictService {
     @Transactional
     @Path("del-item")
     public Response removeDictItem(@QueryParam("serialNo") String serialNo){
-        List<Long> ids = new ArrayList<>() ;
-        ids.add(Long.parseLong(serialNo));
-        baseFacade.remove(YunDictitem.class,ids);
-        return Response.status(Response.Status.OK).build();
+        YunDictitem yunDictitem = baseFacade.get(YunDictitem.class, serialNo);
+        baseFacade.remove(yunDictitem);
+        return Response.status(Response.Status.OK).entity(yunDictitem).build();
     }
 
     /**
@@ -147,11 +143,12 @@ public class DictService {
             }
             baseFacade.removeByStringIds(YunDictitem.class,itemIds);
             baseFacade.removeByStringIds(YunDicttype.class,typeIds);
+            return Response.status(Response.Status.OK).entity(yunDictitems).build();
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
         }
-        return Response.status(Response.Status.OK).build();
+
     }
 
 }

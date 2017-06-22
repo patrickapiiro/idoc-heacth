@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  */
 package com.dchealth.security;
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.util.UserUtils;
 import org.apache.shiro.authc.AuthenticationException;
@@ -21,8 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;

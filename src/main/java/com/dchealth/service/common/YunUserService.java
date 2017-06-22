@@ -1,10 +1,10 @@
 package com.dchealth.service.common;
 
 import com.dchealth.VO.YunUserVO;
-import com.dchealth.entity.YunDiseaseList;
-import com.dchealth.entity.YunUserDisease;
-import com.dchealth.entity.YunUserDiseaseManager;
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.rare.YunDiseaseList;
+import com.dchealth.entity.rare.YunUserDisease;
+import com.dchealth.entity.rare.YunUserDiseaseManager;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.PasswordAndSalt;
 import com.dchealth.security.SystemPasswordService;
@@ -171,8 +171,7 @@ public class YunUserService {
         String hql2 = "delete from YunUserDiseaseManager as ym where ym.userId="+yunUsers.getId() ;
 
         userFacade.removeByHql(hql);
-        userFacade.removeByHql(hql2);;
-
+        userFacade.removeByHql(hql2);
 
         for(YunDiseaseList diseaseList:yunUserDiseasese){
             YunUserDisease yunUserDisease = new YunUserDisease() ;

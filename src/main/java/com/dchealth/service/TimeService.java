@@ -1,21 +1,15 @@
 package com.dchealth.service;
 
-import com.dchealth.entity.YunUsers;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.common.BaseFacade;
-import com.dchealth.security.UsernamePasswordToken;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.apache.shiro.mgt.SecurityManager;
-import org.apache.shiro.mgt.SubjectFactory;
-import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
-import java.beans.Transient;
 import java.util.Date;
 import java.util.List;
 

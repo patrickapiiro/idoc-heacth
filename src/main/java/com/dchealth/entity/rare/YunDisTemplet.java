@@ -1,4 +1,4 @@
-package com.dchealth.entity;
+package com.dchealth.entity.rare;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -7,18 +7,17 @@ import java.sql.Timestamp;
  * Created by Administrator on 2017/6/20.
  */
 @Entity
-@Table(name = "yun_release_templet", schema = "emhbase", catalog = "")
-public class YunReleaseTemplet {
+@Table(name = "yun_dis_templet", schema = "emhbase", catalog = "")
+public class YunDisTemplet {
     private String id;
-    private String hstatus;
-    private String hversion;
+    private String doctorId;
     private String dcode;
     private String mblx;
     private String title;
     private String mbsj;
-    private String valuedata;
     private String note;
     private Timestamp modifyDate;
+    private String deptId;
 
     @Id
     @Column(name = "id")
@@ -31,23 +30,13 @@ public class YunReleaseTemplet {
     }
 
     @Basic
-    @Column(name = "hstatus")
-    public String getHstatus() {
-        return hstatus;
+    @Column(name = "doctor_id")
+    public String getDoctorId() {
+        return doctorId;
     }
 
-    public void setHstatus(String hstatus) {
-        this.hstatus = hstatus;
-    }
-
-    @Basic
-    @Column(name = "hversion")
-    public String getHversion() {
-        return hversion;
-    }
-
-    public void setHversion(String hversion) {
-        this.hversion = hversion;
+    public void setDoctorId(String doctorId) {
+        this.doctorId = doctorId;
     }
 
     @Basic
@@ -91,16 +80,6 @@ public class YunReleaseTemplet {
     }
 
     @Basic
-    @Column(name = "valuedata")
-    public String getValuedata() {
-        return valuedata;
-    }
-
-    public void setValuedata(String valuedata) {
-        this.valuedata = valuedata;
-    }
-
-    @Basic
     @Column(name = "note")
     public String getNote() {
         return note;
@@ -120,23 +99,32 @@ public class YunReleaseTemplet {
         this.modifyDate = modifyDate;
     }
 
+    @Basic
+    @Column(name = "dept_id")
+    public String getDeptId() {
+        return deptId;
+    }
+
+    public void setDeptId(String deptId) {
+        this.deptId = deptId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        YunReleaseTemplet that = (YunReleaseTemplet) o;
+        YunDisTemplet that = (YunDisTemplet) o;
 
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
-        if (hstatus != null ? !hstatus.equals(that.hstatus) : that.hstatus != null) return false;
-        if (hversion != null ? !hversion.equals(that.hversion) : that.hversion != null) return false;
+        if (doctorId != null ? !doctorId.equals(that.doctorId) : that.doctorId != null) return false;
         if (dcode != null ? !dcode.equals(that.dcode) : that.dcode != null) return false;
         if (mblx != null ? !mblx.equals(that.mblx) : that.mblx != null) return false;
         if (title != null ? !title.equals(that.title) : that.title != null) return false;
         if (mbsj != null ? !mbsj.equals(that.mbsj) : that.mbsj != null) return false;
-        if (valuedata != null ? !valuedata.equals(that.valuedata) : that.valuedata != null) return false;
         if (note != null ? !note.equals(that.note) : that.note != null) return false;
         if (modifyDate != null ? !modifyDate.equals(that.modifyDate) : that.modifyDate != null) return false;
+        if (deptId != null ? !deptId.equals(that.deptId) : that.deptId != null) return false;
 
         return true;
     }
@@ -144,15 +132,14 @@ public class YunReleaseTemplet {
     @Override
     public int hashCode() {
         int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (hstatus != null ? hstatus.hashCode() : 0);
-        result = 31 * result + (hversion != null ? hversion.hashCode() : 0);
+        result = 31 * result + (doctorId != null ? doctorId.hashCode() : 0);
         result = 31 * result + (dcode != null ? dcode.hashCode() : 0);
         result = 31 * result + (mblx != null ? mblx.hashCode() : 0);
         result = 31 * result + (title != null ? title.hashCode() : 0);
         result = 31 * result + (mbsj != null ? mbsj.hashCode() : 0);
-        result = 31 * result + (valuedata != null ? valuedata.hashCode() : 0);
         result = 31 * result + (note != null ? note.hashCode() : 0);
         result = 31 * result + (modifyDate != null ? modifyDate.hashCode() : 0);
+        result = 31 * result + (deptId != null ? deptId.hashCode() : 0);
         return result;
     }
 }
