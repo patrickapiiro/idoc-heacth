@@ -66,4 +66,15 @@ public class MenuService {
     }
 
 
+    /**
+     * 获取所有菜单数据
+     * @return
+     */
+    @GET
+    @Path("list-menu-all")
+    public List<MenuDict> listMenuDict(){
+        String hql = "from MenuDict as md where md.status='1'" ;
+        return  baseFacade.createQuery(MenuDict.class,hql,new ArrayList<Object>()).getResultList();
+    }
+
 }
