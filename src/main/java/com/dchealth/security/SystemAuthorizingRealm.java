@@ -46,7 +46,7 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authcToken) throws AuthenticationException {
 		UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
 		try {
-			YunUsers yunUsers = userFacade.getYunUsersByUserId(token.getUsername());
+			YunUsers yunUsers = userFacade.getYunUsersByLoginName(token.getUsername());
 
 			if(yunUsers!=null){
 				return  new SimpleAuthenticationInfo(new Principal(yunUsers),token.getCredentials(),getName()) ;

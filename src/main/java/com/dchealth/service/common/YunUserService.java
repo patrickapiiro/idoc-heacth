@@ -1,6 +1,8 @@
 package com.dchealth.service.common;
 
 import com.dchealth.VO.YunUserVO;
+import com.dchealth.entity.common.RoleDict;
+import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.entity.rare.YunUserDisease;
 import com.dchealth.entity.rare.YunUserDiseaseManager;
@@ -193,17 +195,70 @@ public class YunUserService {
     /**
      * 获取用户列表，肯根据用户状态，用户状态不传递或者传递为空则获取全部用户
      * @param loginFlag
+     * @param userName
+     * @param userId
+     * @param email
+     * @param rolename
      * @return
      */
     @GET
     @Path("user-list")
-    public List<YunUsers> listYunUsersByFlags(@QueryParam("loginFlag") String loginFlag){
+    public List<YunUsers> listYunUsersByFlags(@QueryParam("loginFlag") String loginFlag,@QueryParam("userName") String userName,
+                                              @QueryParam("userId")String userId,@QueryParam("email")String email,
+                                              @QueryParam("rolename")String rolename){
         String hql = "from YunUsers as user where 1=1 " ;
         if(!"".equals(loginFlag)&&loginFlag!=null){
             hql+=" and user.loginFlags='"+loginFlag+"'";
         }
+        if(!"".equals(userName)&&userName!=null){
+            hql+=" and user.userName='"+userName+"'";
+        }
+        if(!"".equals(userId)&&userId!=null){
+            hql+=" and user.userId='"+userId+"'";
+        }
+        if(!"".equals(email)&&email!=null){
+            hql+=" and user.email='"+email+"'";
+        }
+        if(!"".equals(rolename)&&rolename!=null){
+            hql+=" and user.rolename='"+rolename+"'";
+        }
         List<YunUsers> resultList = userFacade.createQuery(YunUsers.class, hql, new ArrayList<Object>()).getResultList();
         return resultList;
+    }
+
+
+    /**
+     * 添加用户角色
+     * @param roleDicts
+     * @param userId
+     * @return
+     */
+    @Transactional
+    @POST
+    @Path("add-user-role")
+    public Response addRoles(List<RoleDict> roleDicts,@QueryParam("userId") String userId) throws Exception {
+        YunUsers yunUserById = userFacade.getYunUserById(userId);
+        List<RoleVsUser> roleVsUsers = new ArrayList<>() ;
+        String hql = "delete from RoleVsUser as r where r.userId='"+userId+"'" ;
+        for(RoleDict roleDict:roleDicts){
+            RoleVsUser roleVsUser = new RoleVsUser();
+            roleVsUser.setUserId(userId);
+            roleVsUser.setRoleId(roleDict.getId());
+            roleVsUsers.add(userFacade.merge(roleVsUser));
+        }
+        return Response.status(Response.Status.OK).entity(roleVsUsers).build();
+    }
+
+    /**
+     * 获取用户
+     * @param id
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-user-by-id")
+    public YunUsers getYunUser(@QueryParam("userId") String id) throws Exception {
+        return userFacade.getYunUserById(id);
     }
 
 }

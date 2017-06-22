@@ -111,7 +111,6 @@ public class RoleService {
             roleVsUser.setUserId(user.getId());
             roleVsUserArrayList.add(baseFacade.merge(roleVsUser)) ;
         }
-
         return Response.status(Response.Status.OK).entity(roleVsUserArrayList).build();
     }
 

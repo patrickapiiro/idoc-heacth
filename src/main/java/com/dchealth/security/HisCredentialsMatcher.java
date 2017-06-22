@@ -36,7 +36,7 @@ public class HisCredentialsMatcher extends SimpleCredentialsMatcher {
         char[] password1 = usernamePasswordToken.getPassword();
         String password = new String(password1);
         try {
-            YunUsers yunUsers = userFacade.getYunUsersByUserId(username);
+            YunUsers yunUsers = userFacade.getYunUsersByLoginName(username);
             String dbPass = yunUsers.getPassword() ;
             System.out.println("salt:"+yunUsers.getSalt());
             System.out.println("password:"+password);
