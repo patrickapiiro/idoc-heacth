@@ -1,5 +1,7 @@
 package com.dchealth.entity.rare;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
@@ -18,8 +20,11 @@ public class YunValueFormat {
     private String olddata;
     private Timestamp modifyDate;
 
+
     @Id
     @Column(name = "id")
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
     public String getId() {
         return id;
     }

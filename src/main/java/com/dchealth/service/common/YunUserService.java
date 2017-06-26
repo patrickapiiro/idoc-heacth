@@ -162,6 +162,11 @@ public class YunUserService {
     }
 
 
+    /**
+     * 修改研究疾病和管理疾病
+     * @param yunUserVO
+     * @return
+     */
     @POST
     @Transactional
     @Path("merge-user-disease-info")

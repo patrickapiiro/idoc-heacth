@@ -1,5 +1,7 @@
 package com.dchealth.entity.rare;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -23,6 +25,8 @@ public class YunDiseaseList {
 
     @Id
     @Column(name = "id")
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
     public String getId() {
         return id;
     }

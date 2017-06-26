@@ -1,5 +1,7 @@
 package com.dchealth.entity.rare;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 import java.sql.Timestamp;
 
@@ -22,6 +24,8 @@ public class YunFollowUp {
 
     @Id
     @Column(name = "id")
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
     public Long getId() {
         return id;
     }

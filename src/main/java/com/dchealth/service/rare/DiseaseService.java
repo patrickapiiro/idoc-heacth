@@ -66,8 +66,14 @@ public class DiseaseService {
     @Path("add-new")
     @Transactional
     public Response mergeYunDiseaseList(YunDiseaseList yunDiseaseList){
-        YunDiseaseList merge = baseFacade.merge(yunDiseaseList);
-        return Response.status(Response.Status.OK).entity(merge).build();
+        try {
+            YunDiseaseList merge = baseFacade.merge(yunDiseaseList);
+            Response build = Response.status(Response.Status.OK).entity(merge).build();
+            return build;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e ;
+        }
     }
 
     /**

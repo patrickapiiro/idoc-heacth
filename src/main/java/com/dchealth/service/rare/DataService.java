@@ -50,7 +50,7 @@ public class DataService {
         }
 
         if ("未分组".equals(zflags)){
-            hql+=" and v.zflags is null";
+            hql+=" and v.zflags =''";
         }
 
         if(name!=null&&!"".equals(name)){
@@ -76,7 +76,7 @@ public class DataService {
             if(deptId==null||"".equals(deptId)){
                 throw  new Exception("缺少deptId，科室标识 ");
             }
-            hql+=" and v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0')" ;
+            hql+=" and (v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0'))" ;
         }
         return baseFacade.createQuery(YunValue.class,hql,new ArrayList<Object>()).getResultList();
     }
@@ -172,6 +172,18 @@ public class DataService {
         yunValueFormat.setFormat(format);
         YunValueFormat merge = baseFacade.merge(yunValueFormat);
         return Response.status(Response.Status.OK).entity(merge).build();
+    }
+
+    /**
+     * 获取元数据分组
+     * @param doctorId
+     * @return
+     */
+    @GET
+    @Path("list-value-group")
+    public List<String> getDiseaseGroupName(@QueryParam("doctorId") String doctorId){
+        String hql = "select distinct y.zflags from YunValue as y where y.doctorId='"+doctorId+"'" ;
+        return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList() ;
     }
 
 
