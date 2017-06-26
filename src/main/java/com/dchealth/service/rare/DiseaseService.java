@@ -1,14 +1,18 @@
 package com.dchealth.service.rare;
 
+import com.dchealth.VO.DiseasePatInfo;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.facade.common.BaseFacade;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -79,5 +83,53 @@ public class DiseaseService {
         return Response.status(Response.Status.OK).entity(merge).build();
     }
 
+
+    /**
+     * 获取当前医生研究疾病的病例信息
+     * @param doctorId
+     * @return
+     */
+    @GET
+    @Path("list-doctor-pat-info")
+    public List<DiseasePatInfo> listDiseasePatInfo(@QueryParam("doctorId") String doctorId){
+        List<DiseasePatInfo> diseasePatInfos = new ArrayList<>() ;
+        String hql="select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode and " +
+                "yud.userId='"+doctorId+"'" ;
+        List<YunDiseaseList> yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class, hql, new ArrayList<Object>()).getResultList();
+        for(YunDiseaseList list:yunDiseaseLists){
+            DiseasePatInfo diseasePatInfo = new DiseasePatInfo(list,Long.parseLong("0"),Long.parseLong("0"));
+            Long patNumber = getPatNumber(doctorId, list.getDcode());
+            diseasePatInfo.setPatNumber(patNumber);
+            diseasePatInfo.setFollowNumber(getPatFollowUp(doctorId,list.getDcode()));
+            diseasePatInfos.add(diseasePatInfo);
+        }
+        return diseasePatInfos;
+    }
+
+    /**
+     * 获取某个疾病当月的随访数
+     * @param doctorId
+     * @param dcode
+     * @return
+     */
+    private Long getPatFollowUp(String doctorId, String dcode) {
+        String hql = "select count(*) from YunFollowUp as f,YunPatient as p  where YEAR(f.followDate)=YEAR(current_date()) and " +
+                " MONTH(f.followDate)=MONTH(current_date()) and f.hstatus='R' and f.patientId=p.id" +
+                " and f.dcode='"+dcode+"' and p.doctorId='"+doctorId+"'" ;
+        return baseFacade.createQuery(Long.class,hql,new ArrayList<Object>()).getSingleResult();
+    }
+
+    /**
+     * 获取某个研究院的某个疾病病人
+     * @param doctorId
+     * @param dcode
+     * @return
+     */
+    private Long getPatNumber(String doctorId, String dcode) {
+        String hql = "select count(*) from YunFolder as yf ,YunPatient as yp where yf.patientId=yp.id " +
+                " and yp.doctorId='"+doctorId+"' and " +
+                "yf.diagnosisCode='"+dcode+"' " ;
+        return baseFacade.createQuery(Long.class,hql,new ArrayList<Object>()).getSingleResult();
+    }
 
 }

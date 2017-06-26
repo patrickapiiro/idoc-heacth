@@ -40,7 +40,7 @@ public class RoleService {
      */
     @GET
     @Path("list-role-user")
-    public List<YunUsers> listRoleUsers(String roleId){
+    public List<YunUsers> listRoleUsers(@QueryParam("roldId") String roleId){
         String hql="select y from YunUsers as y ,RoleVsUser rvu where y.id=rvu.userId and rvu.roleId='"+roleId+"'" ;
         return baseFacade.createQuery(YunUsers.class,hql,new ArrayList<Object>()).getResultList();
     }

@@ -42,23 +42,45 @@ public class DataService {
     @GET
     @Path("yun-value-list")
     public List<YunValue> getYunValues(@QueryParam("idcode") String idcode,@QueryParam("doctorId") String doctorId,
-                                       @QueryParam("name")String name,@QueryParam("zflags")String zflags){
+                                       @QueryParam("name")String name,@QueryParam("zflags")String zflags,@QueryParam("deptId")String deptId,
+                                       @QueryParam("pubFlag") String pubFlag) throws Exception {
         String hql = "from YunValue as v where 1=1 " ;
         if(idcode!=null&&!"".equals(idcode)){
             hql+=" and v.idcode='"+idcode+"'" ;
         }
-        if(doctorId!=null&&!"".equals(doctorId)){
-            hql+=" and v.doctorId='"+doctorId+"'" ;
+
+        if ("未分组".equals(zflags)){
+            hql+=" and v.zflags is null";
         }
+
         if(name!=null&&!"".equals(name)){
             hql+=" and v.name='"+name+"'" ;
         }
 
-        if(zflags!=null&&!"".equals(zflags)){
+        if(zflags!=null&&!"".equals(zflags)&&!"未分组".equals(zflags)){
             hql +=" and v.zflags='"+zflags+"'" ;
+        }
+
+        if("".equals(pubFlag)||pubFlag==null){
+            throw  new Exception("缺少pubFlag，公共私有数据标识。0表示私有数据，1表示公共数据");
+        }
+
+        if("1".equals(pubFlag)){
+            hql += " and v.doctorId='0'" ;
+        }
+
+        if("0".equals(pubFlag)){
+            if(doctorId==null||"".equals(doctorId)){
+                throw  new Exception("缺少doctorId，用户标识");
+            }
+            if(deptId==null||"".equals(deptId)){
+                throw  new Exception("缺少deptId，科室标识 ");
+            }
+            hql+=" and v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0')" ;
         }
         return baseFacade.createQuery(YunValue.class,hql,new ArrayList<Object>()).getResultList();
     }
+
 
 
     /**

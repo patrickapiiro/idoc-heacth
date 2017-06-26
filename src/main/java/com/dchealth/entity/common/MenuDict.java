@@ -15,6 +15,8 @@ public class MenuDict {
     private String path;
     private String status;
     private String parentId ;
+    private String level ;
+
 
 
     @Id
@@ -67,6 +69,16 @@ public class MenuDict {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    @Basic
+    @Column(name="level")
+    public String getLevel() {
+        return level;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
     }
 
     @Override
