@@ -16,6 +16,7 @@ public class MenuDict {
     private String status;
     private String parentId ;
     private String level ;
+    private String show ;
 
 
 
@@ -103,5 +104,14 @@ public class MenuDict {
         result = 31 * result + (path != null ? path.hashCode() : 0);
         result = 31 * result + (status != null ? status.hashCode() : 0);
         return result;
+    }
+
+    @Column(name = "show")
+    public String getShow() {
+        return show;
+    }
+
+    public void setShow(String show) {
+        this.show = show;
     }
 }

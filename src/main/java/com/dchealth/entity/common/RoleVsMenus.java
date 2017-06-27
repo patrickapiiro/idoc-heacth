@@ -12,7 +12,7 @@ import javax.persistence.*;
 public class RoleVsMenus {
     private String id;
     private String roleId;
-    private String menuDict;
+    private String menuId;
 
     @Id
     @Column(name = "id")
@@ -37,13 +37,13 @@ public class RoleVsMenus {
     }
 
     @Basic
-    @Column(name = "menu_dict")
-    public String getMenuDict() {
-        return menuDict;
+    @Column(name = "menu_id")
+    public String getMenuId() {
+        return menuId;
     }
 
-    public void setMenuDict(String menuDict) {
-        this.menuDict = menuDict;
+    public void setMenuId(String menuDict) {
+        this.menuId = menuDict;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class RoleVsMenus {
 
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
         if (roleId != null ? !roleId.equals(that.roleId) : that.roleId != null) return false;
-        if (menuDict != null ? !menuDict.equals(that.menuDict) : that.menuDict != null) return false;
+        if (menuId != null ? !menuId.equals(that.menuId) : that.menuId != null) return false;
 
         return true;
     }
@@ -64,7 +64,7 @@ public class RoleVsMenus {
     public int hashCode() {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (roleId != null ? roleId.hashCode() : 0);
-        result = 31 * result + (menuDict != null ? menuDict.hashCode() : 0);
+        result = 31 * result + (menuId != null ? menuId.hashCode() : 0);
         return result;
     }
 }

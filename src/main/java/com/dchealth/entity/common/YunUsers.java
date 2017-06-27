@@ -16,7 +16,7 @@ public class YunUsers  {
     private String userName;
     private String userId;
     private String loginFlags;
-    private Long deptId;
+    private String deptId;
     private String sex;
     private String nation;
     private String mobile;
@@ -81,11 +81,11 @@ public class YunUsers  {
 
     @Basic
     @Column(name = "dept_id")
-    public Long getDeptId() {
+    public String getDeptId() {
         return deptId;
     }
 
-    public void setDeptId(Long deptId) {
+    public void setDeptId(String deptId) {
         this.deptId = deptId;
     }
 

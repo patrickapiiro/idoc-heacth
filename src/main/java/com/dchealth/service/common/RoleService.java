@@ -80,7 +80,7 @@ public class RoleService {
         for (MenuDict md :menuDicts){
             RoleVsMenus roleVsMenus = new RoleVsMenus();
             roleVsMenus.setRoleId(roleId);
-            roleVsMenus.setMenuDict(md.getId());
+            roleVsMenus.setMenuId(md.getId());
             roleVsMenusList.add(baseFacade.merge(roleVsMenus)) ;
         }
 

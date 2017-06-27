@@ -10,6 +10,8 @@ public class Form {
     private List<FormData> form_data = new ArrayList<>() ;
     private  String form_dom  ;
     private Object form_config ;
+    private FormPage form_template ;
+
 
     public List<FormData> getForm_data() {
         return form_data;
@@ -33,5 +35,13 @@ public class Form {
 
     public void setForm_config(Object form_config) {
         this.form_config = form_config;
+    }
+
+    public FormPage getForm_template() {
+        return form_template;
+    }
+
+    public void setForm_template(FormPage form_template) {
+        this.form_template = form_template;
     }
 }

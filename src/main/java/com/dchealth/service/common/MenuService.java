@@ -45,7 +45,7 @@ public class MenuService {
     @Path("list-menu-by-role")
     public List<MenuDict> getMenuByRoleId(@QueryParam("roleId")String roleId){
         String hql = "select md from MenuDict md ,RoleVsMenus rvm where " +
-                "md.id = rvm.menuId and rvm.roldId='"+roleId+"' and md.status='1'" ;
+                "md.id = rvm.menuId and rvm.roleId='"+roleId+"' and md.status='1'" ;
         return baseFacade.createQuery(MenuDict.class,hql,new ArrayList<Object>()).getResultList() ;
     }
 

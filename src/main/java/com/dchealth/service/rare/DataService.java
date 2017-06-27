@@ -110,7 +110,7 @@ public class DataService {
         ids.add(id);
         baseFacade.removeByStringIds(YunValueFormat.class,ids);
         baseFacade.removeByStringIds(YunValue.class,ids);
-        return Response.status(Response.Status.OK).build();
+        return Response.status(Response.Status.OK).entity(ids).build();
     }
 
     /**

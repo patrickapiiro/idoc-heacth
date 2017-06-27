@@ -1,11 +1,15 @@
 package com.dchealth.service.rare;
 
-import com.dchealth.VO.Form;
-import com.dchealth.VO.Hversion;
+import com.dchealth.VO.*;
+import com.dchealth.entity.common.YunDictitem;
+import com.dchealth.entity.common.YunDicttype;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.YunDisTemplet;
 import com.dchealth.entity.rare.YunReleaseTemplet;
+import com.dchealth.entity.rare.YunValueFormat;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.JSONUtil;
+import com.dchealth.util.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +34,7 @@ public class TemplateService {
 
 
     /**
-     * 获取模板列表
+     * 获取工作流列表
      * @param dcode
      * @param doctorId
      * @param title
@@ -43,7 +47,7 @@ public class TemplateService {
                                               @QueryParam("title")String title,@QueryParam("mblx")String mblx,
                                               @QueryParam("deptId")String deptId,
                                               @QueryParam("pubFlag") String pubFlag) throws Exception {
-        String hql = "from YunDisTemplet as t where 1=1" ;
+        String hql = "from YunDisTemplet as t where 1=1 and mblx<>'WORK'" ;
         //所属疾病
         if(!"".equals(dcode)&&dcode!=null){
             hql+=" and t.dcode='"+dcode+"'" ;
@@ -63,7 +67,7 @@ public class TemplateService {
         }
 
         if("1".equals(pubFlag)){
-            hql += " and v.doctorId='0'" ;
+            hql += " and t.doctorId='0'" ;
         }
 
         if("0".equals(pubFlag)){
@@ -73,7 +77,7 @@ public class TemplateService {
             if(deptId==null||"".equals(deptId)){
                 throw  new Exception("缺少deptId，科室标识");
             }
-            hql+=" and v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0')" ;
+            hql+=" and( t.doctorId='"+doctorId+"' or (t.deptId='"+deptId+"' and t.deptId <>'0'))" ;
         }
 
         List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hql, new ArrayList<Object>()).getResultList();
@@ -82,7 +86,7 @@ public class TemplateService {
 
 
     /**
-     * 添加或者修改模板信息
+     * 添加或者修改表单模板
      * @param yunDisTemplet
      * @return
      */
@@ -92,6 +96,20 @@ public class TemplateService {
     public Response mergeYunDisTemplate(YunDisTemplet yunDisTemplet){
         YunDisTemplet merge = baseFacade.merge(yunDisTemplet);
         return Response.status(Response.Status.OK).entity(merge).build();
+    }
+
+    /**
+     * 删除模板
+     * @param templateId
+     * @return
+     */
+    @POST
+    @Path("del")
+    @Transactional
+    public Response removeDisTemplate(String templateId){
+        YunDisTemplet templet = baseFacade.get(YunDisTemplet.class, templateId);
+        baseFacade.remove(templet);
+        return Response.status(Response.Status.OK).entity(templet).build();
     }
 
 
@@ -109,8 +127,161 @@ public class TemplateService {
             throw  new Exception("找不到对应的模板信息");
         }
         String mbsj = yunDisTemplet.getMbsj() ;
+        if(mbsj==null||"".equals(mbsj)){
+            return null ;
+        }
+        Form form =getFormData(mbsj);
+        return form ;
+    }
+
+    /**
+     * 根据模板数据设置Form
+     * @param mbsj
+     * @return
+     * @throws Exception
+     */
+    private Form getFormData(String mbsj) throws Exception {
+
         Form o = (Form) JSONUtil.JSONToObj(mbsj, Form.class);
-        return o ;
+
+        List<FormData> form_datas = o.getForm_data();
+        FormPage formPage = new FormPage();
+
+        for(FormData formData :form_datas){
+            ModelPage modelPage = new ModelPage();
+            modelPage.setTitle(formData.getName());
+            modelPage.setValue(formData.getValue());
+
+            List<Row> rows = formData.getRows();
+            List<RowObject> rowssubjects = modelPage.getRowssubjects();
+            for (Row row:rows){
+                RowObject rowObject = new RowObject();
+                setRowObject(row,rowObject);
+                rowssubjects.add(rowObject);
+            }
+            formPage.getPages().add(modelPage);
+
+        }
+        o.setForm_template(formPage);
+        return  o;
+    }
+
+
+    /**
+     * 根据疾病编码和标题获取表单数据
+     * @param dcode
+     * @param title
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-work-form")
+    public Form getReleaseInfo(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+        String hql = "from YunReleaseTemplet as r where r.hstatus='R' and  r.dcode='"+dcode+"' and r.title='"+title+"'" ;
+        List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        if(resultList.size()>0){
+            YunReleaseTemplet yunReleaseTemplet = resultList.get(0);
+            String mbsj = yunReleaseTemplet.getMbsj();
+            if(mbsj!=null&&!"".equals(mbsj)){
+                return getFormData(mbsj);
+            }else{
+                return  null ;
+            }
+        }else{
+            String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
+                    " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
+            List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hqlPrivate, new ArrayList<Object>()).getResultList();
+            if(yunDisTemplets.size()>0){
+                YunDisTemplet tmplate = yunDisTemplets.get(0);
+                String mbsj = tmplate.getMbsj();
+                if(mbsj!=null&&!"".equals(mbsj)){
+                    return getFormData(mbsj);
+                }else{
+                    return  null ;
+                }
+            }else{
+                return null ;
+            }
+        }
+
+
+    }
+
+    /**
+     * 根据formData Row 设置templateObject 的rowObject
+     * @param row
+     * @param rowObject
+     */
+    private void setRowObject(Row row, RowObject rowObject) throws Exception {
+
+        List<Col> cols = row.getCols();
+        if(cols.size()>0){
+            rowObject.setColumn(String.valueOf(12/cols.size()));
+        }
+
+        List<ElementRow> rows = rowObject.getRows();
+        for (Col col:cols){
+            ElementRow elementRow = new ElementRow();
+            elementRow.setName(col.getValue());
+            setElementRow(elementRow,col);
+            rows.add(elementRow);
+        }
+
+    }
+
+    /**
+     * 根据列设置行元素
+     * @param elementRow
+     * @param col
+     */
+    private void setElementRow(ElementRow elementRow, Col col) throws Exception {
+        String value = col.getValue();
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String deptId = yunUsers.getDeptId();
+        String id = yunUsers.getId();
+        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  t.title='"+value+"" +
+                "' and ((v.doctorId='0' and v.deptId='0') or (v.doctorId='"+id+"' and v.deptId='"+deptId+"')" +
+                " or (v.doctorId='"+id+"' and v.deptId='0'))" ;
+
+        List<YunValueFormat> resultList = baseFacade.createQuery(YunValueFormat.class, hql, new ArrayList<Object>()).getResultList();
+        if(resultList.size()<1){
+            throw new Exception("获取名称为【"+value+"】的元数据格式失败！");
+        }
+        YunValueFormat yunValueFormat = resultList.get(0);
+
+
+        DataElementFormat dataElement = (DataElementFormat) JSONUtil.JSONToObj(yunValueFormat.getFormat(), DataElementFormat.class);
+        Extend extend = new Extend();
+        extend.setHead(dataElement.getHead());
+        extend.setPlac(dataElement.getPlac());
+        extend.setRelyon(yunValueFormat.getRelyon());
+        extend.setRelyonvalue(dataElement.getRelyonvalue());
+        extend.setTail(dataElement.getTail());
+        extend.setTemplet(dataElement.getTemplet());
+        elementRow.setExtend(extend);
+        elementRow.setType(dataElement.getPart());
+        elementRow.setName(value);
+        String dict = yunValueFormat.getDict();
+
+        if(dict!=null&&!"".equals(dict)){
+            String hqlDict = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"'" +
+                    " and ((yd.deptId='0' and yd.userId='0') or (yd.deptId='0' and yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.userId='"+id+"'))" +
+                    " order by yd.userId ,yd.deptId desc" ;
+            List<YunDictitem> resultList1 = baseFacade.createQuery(YunDictitem.class, hqlDict, new ArrayList<Object>()).getResultList();
+            if(resultList1.size()<1){
+                throw new Exception("获取名称为【"+dict+"】的字典失败");
+            }
+
+            for(YunDictitem yunDictitem:resultList1){
+                RowItem rowItem = new RowItem();
+                rowItem.setInputcode(yunDictitem.getInputCode());
+                rowItem.setName(value);
+                rowItem.setText(yunDictitem.getItemName());
+                rowItem.setValue(yunDictitem.getItemCode());
+                elementRow.getItems().add(rowItem);
+            }
+        }
     }
 
 
@@ -155,7 +326,7 @@ public class TemplateService {
         String title = yunDisTemplet.getTitle() ;
         String doctorId = yunDisTemplet.getDoctorId() ;
         String deptId = yunDisTemplet.getDeptId();
-        String hql = "from YunReleaseTemplate as r where r.dcode='"+decode+"'" +
+        String hql = "from YunReleaseTemplet as r where r.dcode='"+decode+"'" +
                 " and r.title='"+title+"'" ;
         Hversion hversion= new Hversion();
         hversion.setDept(deptId);
