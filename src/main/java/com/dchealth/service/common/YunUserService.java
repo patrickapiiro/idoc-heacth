@@ -19,9 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Created by Administrator on 2017/6/6.
@@ -109,9 +111,17 @@ public class YunUserService {
     @Transactional
     @Path("rest-pwd")
     public Response restPassword(@QueryParam("userId")String userId) throws Exception {
+
         YunUsers yunUsers = userFacade.getYunUsersByUserId(userId) ;
+        Properties properties = new Properties() ;
+        InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("dchealth.properties");
+        properties.load(resourceAsStream);
+        String newPassword =properties.getProperty("newPassword");
+        if("".equals(newPassword)||null==newPassword){
+            newPassword = "123456" ;
+        }
         if (yunUsers!=null){
-            PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(userId, "123456");
+            PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(userId, newPassword);
             yunUsers.setPassword(passwordAndSalt.getPassword());
             yunUsers.setSalt(passwordAndSalt.getSalt());
             userFacade.merge(yunUsers);

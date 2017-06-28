@@ -16,7 +16,7 @@ public class MenuDict {
     private String status;
     private String parentId ;
     private String level ;
-    private String show ;
+    private String showFlag ;
 
 
 
@@ -106,12 +106,12 @@ public class MenuDict {
         return result;
     }
 
-    @Column(name = "show")
-    public String getShow() {
-        return show;
+    @Column(name="show_flag")
+    public String getShowFlag() {
+        return showFlag;
     }
 
-    public void setShow(String show) {
-        this.show = show;
+    public void setShowFlag(String showFlag) {
+        this.showFlag = showFlag;
     }
 }

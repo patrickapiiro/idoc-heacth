@@ -2,8 +2,11 @@ package com.dchealth.service.common;
 
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.util.UserUtils;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.IncorrectCredentialsException;
 import org.apache.shiro.authc.UnknownAccountException;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
 import org.springframework.stereotype.Controller;
 
 import javax.servlet.ServletException;
@@ -13,6 +16,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Created by Administrator on 2017/6/6.
@@ -28,13 +33,26 @@ public class LoginService {
 
     @GET
     public void login() throws IOException, ServletException {
-        httpServletResponse.sendRedirect("../index.html");
+        try {
+            Properties properties = new Properties();
+            InputStream inputStream ;
+            inputStream=this.getClass().getClassLoader().getResourceAsStream("dchealth.properties");
+            properties.load(inputStream);
+            String loginPath = properties.getProperty("loginPath") ;
+            if(loginPath==null||"".equals(loginPath)){
+                loginPath="../index.html";
+            }
+            httpServletResponse.sendRedirect(loginPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e ;
+        }
     }
 
     @GET
     @Path("success")
     public YunUsers loinSuccess() throws Exception {
-      YunUsers yunUsers = UserUtils.getYunUsers();
+      YunUsers yunUsers = UserUtils.getYunUsers(true);
       return yunUsers;
     }
 
@@ -57,7 +75,8 @@ public class LoginService {
             } else if ("randomCodeError".equals(exceptionClassName)) {
                 throw new Exception("验证码错误 ");
             } else {
-                throw new Exception();//最终在异常处理器生成未知错误
+                //最终在异常处理器生成未知错误
+                throw new Exception();
             }
         }
         YunUsers yunUsers = UserUtils.getYunUsers();
