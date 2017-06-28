@@ -11,8 +11,8 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "yun_folder", schema = "emhbase", catalog = "")
 public class YunFolder {
-    private Long id;
-    private Long patientId;
+    private String id;
+    private String patientId;
     private String actioncode;
     private String actionid;
     private Timestamp createDate;
@@ -20,28 +20,28 @@ public class YunFolder {
     private String diagnosisCode;
     private String diagnosis;
     private String bz;
-    private Long relationId;
-    private Long relationFolder;
+    private String relationId;
+    private String relationFolder;
 
     @Id
     @Column(name = "id")
     @GenericGenerator(name="generator",strategy = "uuid.hex")
     @GeneratedValue(generator = "generator")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
     @Basic
     @Column(name = "patient_id")
-    public Long getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 
@@ -117,21 +117,21 @@ public class YunFolder {
 
     @Basic
     @Column(name = "relation_id")
-    public Long getRelationId() {
+    public String getRelationId() {
         return relationId;
     }
 
-    public void setRelationId(Long relationId) {
+    public void setRelationId(String relationId) {
         this.relationId = relationId;
     }
 
     @Basic
     @Column(name = "relation_folder")
-    public Long getRelationFolder() {
+    public String getRelationFolder() {
         return relationFolder;
     }
 
-    public void setRelationFolder(Long relationFolder) {
+    public void setRelationFolder(String relationFolder) {
         this.relationFolder = relationFolder;
     }
 

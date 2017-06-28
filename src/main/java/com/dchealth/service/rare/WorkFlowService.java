@@ -1,13 +1,12 @@
 package com.dchealth.service.rare;
 
-import com.dchealth.VO.DocumentDataElement;
-import com.dchealth.VO.Hversion;
-import com.dchealth.VO.ModelTemplateVo;
-import com.dchealth.VO.YunDisTemplateVo;
-import com.dchealth.entity.rare.YunDisTemplet;
-import com.dchealth.entity.rare.YunReleaseTemplet;
+import com.dchealth.VO.*;
+import com.dchealth.entity.common.YunUsers;
+import com.dchealth.entity.rare.*;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.util.IDUtils;
 import com.dchealth.util.JSONUtil;
+import com.dchealth.util.UserUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -137,5 +138,86 @@ public class WorkFlowService {
 
         return documentDataElements;
     }
+
+
+    /**
+     * 根据病人的ID获取获取填写的表单信息
+     * @param patientId
+     * @return
+     */
+    @GET
+    @Path("list-record-doc")
+    public List<YunRecordDocment> getYunRecordDocument(@QueryParam("patientId") String patientId){
+        String hql = "select d from YunFolder as f ,YunRecordDocument as d where f.id=d.folderId" +
+                " and f.patientId='"+patientId+"'" ;
+        return baseFacade.createQuery(YunRecordDocment.class,hql,new ArrayList<Object>()).getResultList();
+    }
+
+
+    /**
+     * 修改保存信息
+     * @return
+     */
+    @POST
+    @Path("merge-record-doc")
+    @Transactional
+    public  Response addDocument(PostData postData) throws Exception {
+        PostDocumentData postDocumentData = postData.getPostDocumentData();
+        PostPara postPara = postData.getPostPara();
+        String status = postDocumentData.getStatus();
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        if("创建".equals(status)){
+            //创建病人
+            YunPatient patient = new YunPatient();
+            patient.setBr(Timestamp.valueOf(postPara.getBr()));
+            patient.setDoctorId(yunUsers.getId());
+            patient.setDeptId(yunUsers.getDeptId());
+            patient.setEmail(postPara.getEmail());
+            patient.setMid(postPara.getmId());
+            patient.setLxfs(postPara.getLxfs());
+            patient.setNc(postPara.getNc());
+            patient.setNe(postPara.getNc());
+            patient.setPid(postPara.getpId());
+            patient.setTel1(postPara.getTel1());
+            patient.setTel2(postPara.getTel2());
+            patient = baseFacade.merge(patient);
+
+            //创建病例夹
+            YunFolder yunFolder = new YunFolder() ;
+            yunFolder.setCreateDate((Timestamp) new Date());
+            yunFolder.setActioncode("病例研究");
+            yunFolder.setActionid(String.valueOf(IDUtils.genItemId()));
+            yunFolder.setDiagnosisCode(postDocumentData.getDcode());
+            yunFolder.setDiagnosis(postDocumentData.getDcodeName());
+            yunFolder.setPatientId(patient.getId());
+            yunFolder = baseFacade.merge(yunFolder);
+
+            YunRecordDocment yunRecordDocment = new YunRecordDocment();
+            yunRecordDocment.setCategory(postPara.getCategory());
+            yunRecordDocment.setFolderId(yunFolder.getId());
+            yunRecordDocment.setCreateDate((Timestamp) new Date());
+            yunRecordDocment.setTitle(postPara.getTitle());
+            yunRecordDocment.setTypecode1(postPara.getCode());
+            yunRecordDocment.setTypecode2(postPara.getCodeName());
+            yunRecordDocment.setTempletname(postPara.getMbId());
+            yunRecordDocment.setContent(JSONUtil.objectToJson(postDocumentData).toString());
+            yunRecordDocment.setDoctorId(yunUsers.getId());
+            baseFacade.merge(yunRecordDocment);
+        }else{
+            String docId = postPara.getDocId();
+            YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
+            yunRecordDocment.setCategory(postPara.getCategory());
+            yunRecordDocment.setCreateDate((Timestamp) new Date());
+            yunRecordDocment.setTitle(postPara.getTitle());
+            yunRecordDocment.setTypecode1(postPara.getCode());
+            yunRecordDocment.setTypecode2(postPara.getCodeName());
+            yunRecordDocment.setTempletname(postPara.getMbId());
+            yunRecordDocment.setContent(JSONUtil.objectToJson(postDocumentData).toString());
+            yunRecordDocment.setDoctorId(yunUsers.getId());
+            baseFacade.merge(yunRecordDocment);
+        }
+        return Response.status(Response.Status.OK).entity(postData).build();
+    }
+
 
 }

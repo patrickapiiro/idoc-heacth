@@ -11,9 +11,9 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "yun_patient", schema = "emhbase", catalog = "")
 public class YunPatient {
-    private Long id;
-    private Long doctorId;
-    private Long deptId;
+    private String id;
+    private String doctorId;
+    private String deptId;
     private String pid;
     private String mid;
     private String nc;
@@ -34,31 +34,31 @@ public class YunPatient {
     @Column(name = "id")
     @GenericGenerator(name="generator",strategy = "uuid.hex")
     @GeneratedValue(generator = "generator")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
     @Basic
     @Column(name = "doctor_id")
-    public Long getDoctorId() {
+    public String getDoctorId() {
         return doctorId;
     }
 
-    public void setDoctorId(Long doctorId) {
+    public void setDoctorId(String doctorId) {
         this.doctorId = doctorId;
     }
 
     @Basic
     @Column(name = "dept_id")
-    public Long getDeptId() {
+    public String getDeptId() {
         return deptId;
     }
 
-    public void setDeptId(Long deptId) {
+    public void setDeptId(String deptId) {
         this.deptId = deptId;
     }
 

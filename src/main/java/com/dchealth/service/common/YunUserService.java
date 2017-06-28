@@ -220,10 +220,13 @@ public class YunUserService {
     @Path("user-list")
     public List<YunUsers> listYunUsersByFlags(@QueryParam("loginFlag") String loginFlag,@QueryParam("userName") String userName,
                                               @QueryParam("userId")String userId,@QueryParam("email")String email,
-                                              @QueryParam("rolename")String rolename){
+                                              @QueryParam("rolename")String rolename,@QueryParam("mobile")String mobile){
         String hql = "from YunUsers as user where 1=1 " ;
         if(!"".equals(loginFlag)&&loginFlag!=null){
             hql+=" and user.loginFlags='"+loginFlag+"'";
+        }
+        if(!"".equals(mobile)&&mobile!=null){
+            hql+=" and user.mobile='"+mobile+"'";
         }
         if(!"".equals(userName)&&userName!=null){
             hql+=" and user.userName='"+userName+"'";
