@@ -57,7 +57,7 @@ public class PatientService {
         patientPage.setCounts(count);
         if(perPage>0){
             baseFacadeQuery.setFirstResult(currentPage*perPage) ;
-            baseFacadeQuery.setMaxResults((currentPage+1)*perPage);
+            baseFacadeQuery.setMaxResults(perPage);
         }
         List<YunPatient> yunPatients = baseFacadeQuery.getResultList();
         patientPage.setData(yunPatients);
@@ -123,7 +123,7 @@ public class PatientService {
         yunPatientPage.setCounts(aLong);
         if(perPage>0){
             baseFacadeQuery.setFirstResult(currentPage*perPage) ;
-            baseFacadeQuery.setMaxResults((currentPage+1)*perPage);
+            baseFacadeQuery.setMaxResults(perPage);
         }
         yunPatientPage.setData(baseFacadeQuery.getResultList());
         return yunPatientPage;
