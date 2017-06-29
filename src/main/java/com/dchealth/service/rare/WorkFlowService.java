@@ -52,9 +52,7 @@ public class WorkFlowService {
         if(!"".equals(doctorId)&&null!=doctorId){
             hql +=" and t.doctorId='"+doctorId+"'";
         }
-
         List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class,hql,new ArrayList<Object>()).getResultList();
-
         for(YunDisTemplet templet:yunDisTemplets){
             YunDisTemplateVo vo = new YunDisTemplateVo();
             vo.setDcode(templet.getDcode());
@@ -88,7 +86,6 @@ public class WorkFlowService {
     @Path("merge-work-flow")
     @Transactional
     public Response mergeWorkFlow(YunDisTemplateVo yunDisTemplateVo) throws IOException, JSONException {
-
         YunDisTemplet yunDisTemplet = new YunDisTemplet();
         yunDisTemplet.setDcode(yunDisTemplateVo.getDcode());
         yunDisTemplet.setDeptId(yunDisTemplateVo.getDeptId());
@@ -117,7 +114,6 @@ public class WorkFlowService {
     public List<ModelTemplateVo> getWorkFlowDocumentElement(@QueryParam("dcode") String dcode,@QueryParam("title") String title,@QueryParam("doctorId") String doctorId){
         String hql = "from YunReleaseTemplet as t where t.hstatus='R' and t.dcode='"+dcode+"' and t.title='"+title+"'" ;
         List<ModelTemplateVo> documentDataElements = new ArrayList<>();
-
         List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
         for(YunReleaseTemplet templet:resultList){
             Hversion hversion= (Hversion) JSONUtil.JSONToObj(templet.getHversion(),Hversion.class);
@@ -126,8 +122,6 @@ public class WorkFlowService {
                 documentDataElements.addAll(mbsj);
             }
         }
-
-
         //如果没有发布数据，则用私有数据
         if(documentDataElements.size()==0){
             List<YunDisTemplateVo> yunDisTemplateVos = listWorkFlow(dcode, title, doctorId);
@@ -135,7 +129,6 @@ public class WorkFlowService {
                 documentDataElements.addAll(vo.getMbsj());
             }
         }
-
         return documentDataElements;
     }
 
