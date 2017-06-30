@@ -95,7 +95,7 @@ public class WorkFlowService {
         yunDisTemplet.setModifyDate(yunDisTemplateVo.getModifyDate());
         yunDisTemplet.setTitle(yunDisTemplateVo.getTitle());
         yunDisTemplet.setNote(yunDisTemplateVo.getNote());
-        String mbsj = JSONUtil.objectToJson(yunDisTemplateVo.getMbsj()).toString();
+        String mbsj = JSONUtil.objectToJsonString(yunDisTemplateVo.getMbsj());
         yunDisTemplet.setMbsj(mbsj);
         YunDisTemplet merge = baseFacade.merge(yunDisTemplet);
         return  Response.status(Response.Status.OK).entity(merge).build();

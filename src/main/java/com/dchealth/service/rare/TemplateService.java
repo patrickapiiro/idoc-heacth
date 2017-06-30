@@ -106,7 +106,7 @@ public class TemplateService {
     @POST
     @Path("del")
     @Transactional
-    public Response removeDisTemplate(String templateId){
+    public Response removeDisTemplate(@QueryParam("templateId") String templateId){
         YunDisTemplet templet = baseFacade.get(YunDisTemplet.class, templateId);
         baseFacade.remove(templet);
         return Response.status(Response.Status.OK).entity(templet).build();

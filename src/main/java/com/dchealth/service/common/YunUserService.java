@@ -1,5 +1,6 @@
 package com.dchealth.service.common;
 
+import com.dchealth.VO.Page;
 import com.dchealth.VO.YunUserVO;
 import com.dchealth.entity.common.RoleDict;
 import com.dchealth.entity.common.RoleVsUser;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
@@ -209,39 +211,59 @@ public class YunUserService {
 
     /**
      * 获取用户列表，肯根据用户状态，用户状态不传递或者传递为空则获取全部用户
-     * @param loginFlag
-     * @param userName
-     * @param userId
-     * @param email
-     * @param rolename
+     * @param where
      * @return
      */
     @GET
     @Path("user-list")
-    public List<YunUsers> listYunUsersByFlags(@QueryParam("loginFlag") String loginFlag,@QueryParam("userName") String userName,
+    public Page<YunUsers> listYunUsersByFlags(@QueryParam("loginFlag") String loginFlag,@QueryParam("userName") String userName,
                                               @QueryParam("userId")String userId,@QueryParam("email")String email,
-                                              @QueryParam("rolename")String rolename,@QueryParam("mobile")String mobile){
+                                              @QueryParam("rolename")String rolename,@QueryParam("where")String where,@QueryParam("mobile")String mobile,
+                                              @QueryParam("perPage")int perPage,@QueryParam("currentPage") int currentPage){
         String hql = "from YunUsers as user where 1=1 " ;
+        String hqlCount = "select count(user) from YunUsers as user where 1=1 " ;
+        if(!"".equals(where)&&where!=null){
+            hql+=(" and "+where);
+            hqlCount+=(" and "+where);
+        }
         if(!"".equals(loginFlag)&&loginFlag!=null){
             hql+=" and user.loginFlags='"+loginFlag+"'";
+            hqlCount+=" and user.loginFlags='"+loginFlag+"'";
         }
         if(!"".equals(mobile)&&mobile!=null){
             hql+=" and user.mobile='"+mobile+"'";
+            hqlCount+=" and user.mobile='"+mobile+"'";
         }
         if(!"".equals(userName)&&userName!=null){
             hql+=" and user.userName='"+userName+"'";
+            hqlCount+=" and user.userName='"+userName+"'";
         }
         if(!"".equals(userId)&&userId!=null){
             hql+=" and user.userId='"+userId+"'";
+            hqlCount+=" and user.userId='"+userId+"'";
         }
         if(!"".equals(email)&&email!=null){
             hql+=" and user.email='"+email+"'";
+            hqlCount+=" and user.email='"+email+"'";
         }
         if(!"".equals(rolename)&&rolename!=null){
             hql+=" and user.rolename='"+rolename+"'";
+            hqlCount+=" and user.rolename='"+rolename+"'";
         }
-        List<YunUsers> resultList = userFacade.createQuery(YunUsers.class, hql, new ArrayList<Object>()).getResultList();
-        return resultList;
+        TypedQuery<YunUsers> query = userFacade.createQuery(YunUsers.class, hql, new ArrayList<Object>());
+        Page<YunUsers> yunUsersPage = new Page<>();
+        Long counts = userFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
+        yunUsersPage.setCounts(counts);
+        if(perPage>0){
+            query.setFirstResult(currentPage*perPage) ;
+            query.setMaxResults(perPage);
+            yunUsersPage.setPerPage((long) perPage);
+
+        }
+        List<YunUsers> resultList = query.getResultList();
+        yunUsersPage.setData(resultList);
+
+        return yunUsersPage;
     }
 
 

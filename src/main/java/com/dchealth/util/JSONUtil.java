@@ -49,5 +49,23 @@ public class JSONUtil {
         }
         return new JSONObject(jsonStr);
     }
+   /**
+     * 将实体POJO转化为JSON
+     * @param obj
+     * @return
+     * @throws JSONException
+     * @throws IOException
+     */
+    public static String objectToJsonString(Object obj) throws JSONException, IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        // Convert object to JSON string
+        String jsonStr = "";
+        try {
+            jsonStr =  mapper.writeValueAsString(obj);
+        } catch (IOException e) {
+            throw e;
+        }
+        return jsonStr;
+    }
 
 }
