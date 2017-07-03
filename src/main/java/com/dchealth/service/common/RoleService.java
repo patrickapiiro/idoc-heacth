@@ -2,6 +2,7 @@ package com.dchealth.service.common;
 
 import com.dchealth.entity.common.*;
 import com.dchealth.facade.common.BaseFacade;
+import org.jboss.logging.annotations.Pos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,5 +115,46 @@ public class RoleService {
         return Response.status(Response.Status.OK).entity(roleVsUserArrayList).build();
     }
 
+
+    /**
+     * 根据角色ID获取角色所有的资源
+     * @param roleId
+     * @return
+     */
+    @GET
+    @Path("list-role-resource")
+    public List<ResourceDict> listRoleResource(@QueryParam("roleId") String roleId){
+        String hql = "select re from RoleDict rd ,RoleVsResource rvr ,ResourceDict re where rd.status='1' " +
+                "and re.status='1' and rd.id=rvr.roleId" +
+                " and re.id=rvr.resourceId and " +
+                " rd.id='"+roleId+"'" ;
+        List<ResourceDict> resourceDicts = baseFacade.createQuery(ResourceDict.class, hql, new ArrayList<Object>()).getResultList();
+        return resourceDicts;
+    }
+
+    /**
+     * 添加角色对应的资源
+     * @param roleId
+     * @param resourceDicts
+     * @return
+     * @throws Exception
+     */
+    @Transactional
+    @Path("add-role-resource")
+    @POST
+    public Response mergeResource(@QueryParam("roleId")String roleId,List<ResourceDict> resourceDicts) throws Exception {
+        String hql ="delete RoleVsResource where roleId='"+roleId+"'";
+        baseFacade.removeByHql(hql);
+        if("".equals(roleId)||null==roleId){
+            throw  new Exception("角色ID为空！");
+        }
+        for (ResourceDict resourceDict:resourceDicts){
+            RoleVsResource roleVsResource = new RoleVsResource();
+            roleVsResource.setRoleId(roleId);
+            roleVsResource.setResourceId(resourceDict.getId());
+            baseFacade.merge(roleVsResource);
+        }
+        return Response.status(Response.Status.OK).entity(resourceDicts).build();
+    }
 
 }
