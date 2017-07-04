@@ -16,11 +16,12 @@ public class YunReleaseTemplateVo {
     private String title;
     //private String mbsj;
     private String hversion;
-   private List<ModelTemplateVo> mbsj=new ArrayList<>();
+    private List<ModelTemplateVo> mbsj = new ArrayList<>();
 
     public String getId() {
         return id;
     }
+
     public void setId(String id) {
         this.id = id;
     }
