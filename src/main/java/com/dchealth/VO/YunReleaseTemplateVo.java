@@ -14,13 +14,13 @@ public class YunReleaseTemplateVo {
     private String dcode;
     private String mblx;
     private String title;
-    //private String mbsj;
     private String hversion;
-   private List<ModelTemplateVo> mbsj=new ArrayList<>();
+    private Object mbsj;
 
     public String getId() {
         return id;
     }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -65,11 +65,11 @@ public class YunReleaseTemplateVo {
         this.hversion = hversion;
     }
 
-    public List<ModelTemplateVo> getMbsj() {
+    public Object getMbsj() {
         return mbsj;
     }
 
-    public void setMbsj(List<ModelTemplateVo> mbsj) {
+    public void setMbsj(Object mbsj) {
         this.mbsj = mbsj;
     }
 }
