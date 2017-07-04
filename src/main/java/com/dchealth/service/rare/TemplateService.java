@@ -378,5 +378,62 @@ public class TemplateService {
 
     }
 
+    /**
+     * 备案文件添加病种和启动队列
+     * @param yunReleaseTemplateVo
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Transactional
+    @Path("add-new-release")
+    public Response mergeYunDiseaseTemplate(YunReleaseTemplateVo yunReleaseTemplateVo) throws Exception{
+        YunReleaseTemplet yunReleaseTemplet = new YunReleaseTemplet();
+        yunReleaseTemplet.setDcode(yunReleaseTemplateVo.getDcode());
+        yunReleaseTemplet.setHstatus(yunReleaseTemplateVo.getHstatus());
+        yunReleaseTemplet.setTitle(yunReleaseTemplateVo.getTitle());
+        yunReleaseTemplet.setMblx(yunReleaseTemplateVo.getMblx());
+        yunReleaseTemplet.setMbsj(JSONUtil.objectToJsonString(yunReleaseTemplateVo.getMbsj()));
+        yunReleaseTemplet.setHversion(yunReleaseTemplateVo.getHversion());
+        yunReleaseTemplet.setModifyDate(new Timestamp(new Date().getTime()));
+        YunReleaseTemplet releaseTemplet = baseFacade.merge(yunReleaseTemplet);
+        return  Response.status(Response.Status.OK).entity(releaseTemplet).build();
+    }
 
+    /**
+     * 根据模板类型获取模板数据
+     * @param mblx 模板类型
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Transactional
+    @Path("list-yunrelease-template")
+    public List<YunReleaseTemplet> getYunReleaseTemplate(@QueryParam("mblx")String mblx) throws Exception{
+        String hql = "from YunReleaseTemplet as t where 1=1 " ;
+        //所属疾病
+        if(!"".equals(mblx) && mblx!=null){
+            hql+=" and t.mblx='"+mblx+"'" ;
+        }
+        List<YunReleaseTemplet> yunReleaseTemplets = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
+        return yunReleaseTemplets;
+    }
+
+    /**
+     * 根据资源ID获取模板资源数据
+     * @param id
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Transactional
+    @Path("yun-release-data")
+    public YunReleaseTemplet getYunReleaseTempletById(@QueryParam("id")String id) throws Exception{
+        String hql = "from YunReleaseTemplet as t where 1=1 ";
+        if(id!=null && !"".equals(id)){
+            hql += " and t.id = '"+id+"'";
+        }
+        YunReleaseTemplet yunReleaseTemplet = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getSingleResult();
+        return yunReleaseTemplet;
+    }
 }
