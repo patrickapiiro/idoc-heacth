@@ -102,7 +102,7 @@ public class GroupService {
     @Path("add-organ-number")
     public Response mergeYunOrganNumber(YunGroupVo yunGroupVo){
         YunOrganNumber yunOrganNumber = new YunOrganNumber();
-        yunOrganNumber.setId(Long.valueOf(yunGroupVo.getGroupId()));
+        yunOrganNumber.setId(yunGroupVo.getGroupId());
         yunOrganNumber.setUserId(yunGroupVo.getUserId());
         yunOrganNumber.setModify_date(new Timestamp(new Date().getTime()));
         YunOrganNumber merge =  baseFacade.merge(yunOrganNumber);

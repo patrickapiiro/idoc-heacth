@@ -10,17 +10,17 @@ import java.sql.Timestamp;
 @Table(name = "yun_organ_number", schema = "emhbase", catalog = "")
 public class YunOrganNumber {
 
-    private Long id;
+    private String id;
     private String userId;
     private Timestamp modify_date;
 
     @Id
     @Column(name = "id")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
