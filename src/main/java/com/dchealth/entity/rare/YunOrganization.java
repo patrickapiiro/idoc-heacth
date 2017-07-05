@@ -12,7 +12,7 @@ import java.sql.Timestamp;
 @Table(name = "yun_organization", schema = "emhbase", catalog = "")
 public class YunOrganization {
 
-    private Long id;
+    private String id;
     private String title;
     private String dcode;
     private String level;
@@ -23,11 +23,11 @@ public class YunOrganization {
     @Column(name = "id")
     @GenericGenerator(name="generator",strategy = "uuid.hex")
     @GeneratedValue(generator = "generator")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

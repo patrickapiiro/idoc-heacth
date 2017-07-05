@@ -49,7 +49,7 @@ public class GroupService {
     public List<YunUsers> getYunOrganUserList(@QueryParam("id")String id){
         String hql = "select yu from YunOrganNumber as y,YunUsers as yu where y.userId = yu.id ";
         if(id!=null && !"".equals(id)){
-            hql += " and y.id = " + id;
+            hql += " and y.id = '" + id +"'";
         }
         List<YunUsers> yunUsersList = baseFacade.createQuery(YunUsers.class,hql, new ArrayList<Object>()).getResultList();
         return yunUsersList;
@@ -121,7 +121,7 @@ public class GroupService {
     public Response delYunOrganizationNumber(@QueryParam("groupId") String groupId,@QueryParam("userId") String userId){
         String hql = " from YunOrganNumber as y where 1=1 ";
         if(groupId!=null && !"".equals(groupId)){
-            hql += " and y.id = "+groupId;
+            hql += " and y.id = '"+groupId+"'";
         }
         if(userId!=null && !"".equals(userId)){
             hql += " and y.userId = '"+userId+"'";
@@ -152,7 +152,7 @@ public class GroupService {
     public List<YunUsers> getYunDeptUserList(@QueryParam("deptId") String deptId){
         String hql = " from YunUsers as yu where 1=1 ";
         if(deptId!=null && !"".equals(deptId)){
-            hql += " and yu.deptId = " + deptId;
+            hql += " and yu.deptId = '" + deptId+"'";
         }
         List<YunUsers> yunUsersList = baseFacade.createQuery(YunUsers.class,hql, new ArrayList<Object>()).getResultList();
         return yunUsersList;
@@ -189,7 +189,7 @@ public class GroupService {
         //删除科室信息
         List<String> ids = new ArrayList<>();
         ids.add(deptId);
-        String hql = " update YunUsers user set user.deptId = 0 where user.deptId = " + deptId;
+        String hql = " update YunUsers user set user.deptId = 0 where user.deptId = '" + deptId+"'";
         baseFacade.createNativeQuery(hql).executeUpdate();
         baseFacade.removeByStringIds(YunDept.class,ids);
         return Response.status(Response.Status.OK).entity(ids).build();
@@ -205,7 +205,7 @@ public class GroupService {
     public Response createYunDeptUserRelation(YunGroupVo yunGroupVo){
         String deptId = yunGroupVo.getGroupId();
         String userId = yunGroupVo.getUserId();
-        String hql = " update YunUsers user set user.deptId = " + deptId +" where user.id = '"+userId+"' ";
+        String hql = " update YunUsers user set user.deptId = '" + deptId +"' where user.id = '"+userId+"' ";
         int res = baseFacade.createNativeQuery(hql).executeUpdate();
         return Response.status(Response.Status.OK).entity(res).build();
     }
@@ -220,7 +220,7 @@ public class GroupService {
     @Transactional
     @Path("del-user-dept-relation")
     public Response delYunDeptUserRelation(@QueryParam("deptId") String deptId,@QueryParam("userId") String userId){
-        String hql = " update YunUsers user set user.deptId = 0 where user.id = '"+userId+"' and user.deptId = "+deptId;
+        String hql = " update YunUsers user set user.deptId = 0 where user.id = '"+userId+"' and user.deptId = '"+deptId+"'";
         Integer res = baseFacade.createNativeQuery(hql).executeUpdate();
         return Response.status(Response.Status.OK).entity(res).build();
     }
