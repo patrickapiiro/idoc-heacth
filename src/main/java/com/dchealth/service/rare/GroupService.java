@@ -106,20 +106,22 @@ public class GroupService {
         yunOrganNumber.setUserId(yunGroupVo.getUserId());
         yunOrganNumber.setModify_date(new Timestamp(new Date().getTime()));
         YunOrganNumber merge =  baseFacade.merge(yunOrganNumber);
-        return Response.status(Response.Status.OK).entity(merge).build();
+        YunUsers yunUsers = baseFacade.get(YunUsers.class,merge.getUserId());
+        return Response.status(Response.Status.OK).entity(yunUsers).build();
     }
 
     /**
-     * 根据传入的群组Id和用户Id删除其关联关系
-     * @param groupId
-     * @param userId
+     * 根据传入的yunGroupVo对象(群组Id和用户Id)删除其关联关系
+     * @param yunGroupVo
      * @return
      */
     @POST
     @Transactional
     @Path("del-organ-number")
-    public Response delYunOrganizationNumber(@QueryParam("groupId") String groupId,@QueryParam("userId") String userId){
+    public Response delYunOrganizationNumber(YunGroupVo yunGroupVo){
         String hql = " from YunOrganNumber as y where 1=1 ";
+        String groupId = yunGroupVo.getGroupId();
+        String userId = yunGroupVo.getUserId();
         if(groupId!=null && !"".equals(groupId)){
             hql += " and y.id = '"+groupId+"'";
         }
@@ -189,7 +191,7 @@ public class GroupService {
         //删除科室信息
         List<String> ids = new ArrayList<>();
         ids.add(deptId);
-        String hql = " update YunUsers user set user.deptId = 0 where user.deptId = '" + deptId+"'";
+        String hql = " update Yun_Users user set user.dept_Id = 0 where user.dept_Id = '" + deptId+"'";
         baseFacade.createNativeQuery(hql).executeUpdate();
         baseFacade.removeByStringIds(YunDept.class,ids);
         return Response.status(Response.Status.OK).entity(ids).build();
@@ -205,22 +207,24 @@ public class GroupService {
     public Response createYunDeptUserRelation(YunGroupVo yunGroupVo){
         String deptId = yunGroupVo.getGroupId();
         String userId = yunGroupVo.getUserId();
-        String hql = " update YunUsers user set user.deptId = '" + deptId +"' where user.id = '"+userId+"' ";
+        String hql = " update Yun_Users user set user.dept_Id = '" + deptId +"' where user.id = '"+userId+"' ";
         int res = baseFacade.createNativeQuery(hql).executeUpdate();
-        return Response.status(Response.Status.OK).entity(res).build();
+        YunUsers yunUsers = baseFacade.get(YunUsers.class,userId);
+        return Response.status(Response.Status.OK).entity(yunUsers).build();
     }
 
     /**
-     * 根据传入的科室Id和用户Id删除其关联关系
-     * @param deptId
-     * @param userId
+     * 根据传入的yunGroupVo对象(科室Id和用户Id)删除其关联关系
+     * @param yunGroupVo
      * @return
      */
     @POST
     @Transactional
     @Path("del-user-dept-relation")
-    public Response delYunDeptUserRelation(@QueryParam("deptId") String deptId,@QueryParam("userId") String userId){
-        String hql = " update YunUsers user set user.deptId = 0 where user.id = '"+userId+"' and user.deptId = '"+deptId+"'";
+    public Response delYunDeptUserRelation(YunGroupVo yunGroupVo){
+        String deptId = yunGroupVo.getGroupId();
+        String userId = yunGroupVo.getUserId();
+        String hql = " update Yun_Users user set user.dept_Id = 0 where user.id = '"+userId+"' and user.dept_Id = '"+deptId+"'";
         Integer res = baseFacade.createNativeQuery(hql).executeUpdate();
         return Response.status(Response.Status.OK).entity(res).build();
     }

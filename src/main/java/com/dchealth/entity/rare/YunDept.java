@@ -79,4 +79,30 @@ public class YunDept {
     public void setModifyDate(Timestamp modifyDate) {
         this.modifyDate = modifyDate;
     }
+
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (managerId != null ? managerId.hashCode() : 0);
+        result = 31 * result + (deptName != null ? deptName.hashCode() : 0);
+        result = 31 * result + (deptDesc != null ? deptDesc.hashCode() : 0);
+        result = 31 * result + (createDate != null ? createDate.hashCode() : 0);
+        result = 31 * result + (modifyDate != null ? modifyDate.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        YunDept that = (YunDept)o;
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (managerId != null ? !managerId.equals(that.managerId) : that.managerId != null) return false;
+        if (deptName != null ? !deptName.equals(that.deptName) : that.deptName != null) return false;
+        if (deptDesc != null ? !deptDesc.equals(that.deptDesc) : that.deptDesc != null) return false;
+        if (createDate != null ? !createDate.equals(that.createDate) : that.createDate != null) return false;
+        if (modifyDate != null ? !modifyDate.equals(that.modifyDate) : that.modifyDate != null) return false;
+
+        return true;
+    }
 }
