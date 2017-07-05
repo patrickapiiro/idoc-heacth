@@ -5,6 +5,7 @@ import com.dchealth.entity.common.YunDictitem;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.YunDisTemplet;
 import com.dchealth.entity.rare.YunReleaseTemplet;
+import com.dchealth.entity.rare.YunValue;
 import com.dchealth.entity.rare.YunValueFormat;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.JSONUtil;
@@ -470,5 +471,49 @@ public class TemplateService {
         YunReleaseTemplet yunReleaseTemplet = baseFacade.get(YunReleaseTemplet.class, id);
         baseFacade.remove(yunReleaseTemplet);
         return Response.status(Response.Status.OK).entity(yunReleaseTemplet).build();
+    }
+
+
+    @GET
+    @Path("get-value-html")
+    public ElementRow getValueHtml(@QueryParam("name") String name ,@QueryParam("pubFlag") String pubFlag) throws Exception {
+        String hql = "from YunValue as v where 1=1 " ;
+
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String doctorId = yunUsers.getId();
+        String deptId = yunUsers.getDeptId();
+        if(name!=null&&!"".equals(name)){
+            hql+=" and v.name='"+name+"'" ;
+        }
+
+
+        if("".equals(pubFlag)||pubFlag==null){
+            throw  new Exception("缺少pubFlag，公共私有数据标识。0表示私有数据，1表示公共数据");
+        }
+
+        if("1".equals(pubFlag)){
+            hql += " and v.doctorId='0'" ;
+        }
+
+        if("0".equals(pubFlag)){
+            if(doctorId==null||"".equals(doctorId)){
+                throw  new Exception("缺少doctorId，用户标识");
+            }
+            if(deptId==null||"".equals(deptId)){
+                throw  new Exception("缺少deptId，科室标识 ");
+            }
+            hql+=" and (v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0'))" ;
+        }
+
+        List<YunValue> yunValues = baseFacade.createQuery(YunValue.class,hql,new ArrayList<Object>()).getResultList();
+        if(yunValues.size() !=1){
+            throw new Exception("没有找对应的元数据，或者元数据重复，请检查！");
+        }
+        YunValue yunValue = yunValues.get(0);
+        ElementRow elementRow = new ElementRow() ;
+        Col col = new Col();
+        col.setValue(yunValue.getName());
+        this.setElementRow(elementRow,col);
+        return elementRow;
     }
 }
