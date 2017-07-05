@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @Entity
 @Table(name = "yun_dept",schema = "emhbase",catalog = "")
 public class YunDept {
-    private Long id;
+    private String id;
     private String managerId;
     private String deptName;
     private String deptDesc;
@@ -22,11 +22,11 @@ public class YunDept {
     @Column(name = "id")
     @GenericGenerator(name="generator",strategy = "uuid.hex")
     @GeneratedValue(generator = "generator")
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
