@@ -2,7 +2,6 @@ package com.dchealth.service.rare;
 
 import com.dchealth.VO.*;
 import com.dchealth.entity.common.YunDictitem;
-import com.dchealth.entity.common.YunDicttype;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.YunDisTemplet;
 import com.dchealth.entity.rare.YunReleaseTemplet;
@@ -407,13 +406,19 @@ public class TemplateService {
      * @throws Exception
      */
     @GET
-    @Transactional
     @Path("list-yunrelease-template")
-    public List<YunReleaseTemplet> getYunReleaseTemplate(@QueryParam("mblx")String mblx) throws Exception{
+    public List<YunReleaseTemplet> getYunReleaseTemplate(@QueryParam("mblx")String mblx,@QueryParam("hstatus")String hstatus) throws Exception{
         String hql = "from YunReleaseTemplet as t where 1=1 " ;
         //所属疾病
         if(!"".equals(mblx) && mblx!=null){
             hql+=" and t.mblx='"+mblx+"'" ;
+        }
+        if(!"".equals(hstatus) && hstatus!=null){
+            if("未通过".equals(hstatus)){
+                hql +=" and t.hstatus = ' '";
+            }else{
+                hql +=" and t.hstatus = '"+hstatus+"'";
+            }
         }
         List<YunReleaseTemplet> yunReleaseTemplets = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
         return yunReleaseTemplets;
@@ -426,7 +431,6 @@ public class TemplateService {
      * @throws Exception
      */
     @GET
-    @Transactional
     @Path("yun-release-data")
     public YunReleaseTemplet getYunReleaseTempletById(@QueryParam("id")String id) throws Exception{
         String hql = "from YunReleaseTemplet as t where 1=1 ";
@@ -435,5 +439,36 @@ public class TemplateService {
         }
         YunReleaseTemplet yunReleaseTemplet = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getSingleResult();
         return yunReleaseTemplet;
+    }
+
+    /**
+     * 根据传入的资源Id和状态进行审核
+     * @param yunReleaseTemplateVo
+     * @return
+     */
+    @POST
+    @Path("update")
+    @Transactional
+    public Response updateYunReleaseTemplet(YunReleaseTemplateVo yunReleaseTemplateVo){
+        YunReleaseTemplet yunReleaseTemplet = baseFacade.get(YunReleaseTemplet.class, yunReleaseTemplateVo.getId());
+        String hstatus = yunReleaseTemplateVo.getHstatus();
+        if(hstatus!=null && !"".equals(hstatus)){
+            yunReleaseTemplet.setHstatus(hstatus);
+        }
+        YunReleaseTemplet releaseTemplet = baseFacade.merge(yunReleaseTemplet);
+        return Response.status(Response.Status.OK).entity(releaseTemplet).build();
+    }
+    /**
+     * 根据传入的模板id删除备案信息
+     * @param id
+     * @return
+     */
+    @POST
+    @Path("delete-template")
+    @Transactional
+    public Response deleteYunReleaseTemplate(@QueryParam("id") String id){
+        YunReleaseTemplet yunReleaseTemplet = baseFacade.get(YunReleaseTemplet.class, id);
+        baseFacade.remove(yunReleaseTemplet);
+        return Response.status(Response.Status.OK).entity(yunReleaseTemplet).build();
     }
 }
