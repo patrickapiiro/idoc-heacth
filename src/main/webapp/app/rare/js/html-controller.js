@@ -5,8 +5,11 @@
 var htmlCtrl = documentApp.controller("htmlCtrl",['$scope','$compile','$http',function($scope,$compile,$http){
 
     $scope.setValue=function(){
-        alert("nima")
         console.log(htmlObject.htmlResult);
+        var compileFn = $compile(htmlObject.htmlResult);
+        var $dom = compileFn($scope);
+        console.log($dom);
+        htmlObject.htmlResult = $dom.html();
     }
 
 
