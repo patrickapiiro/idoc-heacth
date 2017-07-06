@@ -111,19 +111,23 @@ public class WorkFlowService {
      */
     @GET
     @Path("list-work-flow-item")
-    public List<ModelTemplateVo> getWorkFlowDocumentElement(@QueryParam("dcode") String dcode,@QueryParam("title") String title,@QueryParam("doctorId") String doctorId){
+    public List<ModelTemplateVo> getWorkFlowDocumentElement(@QueryParam("dcode") String dcode,@QueryParam("title") String title,@QueryParam("doctorId") String doctorId) throws Exception {
         String hql = "from YunReleaseTemplet as t where t.hstatus='R' and t.dcode='"+dcode+"' and t.title='"+title+"'" ;
         List<ModelTemplateVo> documentDataElements = new ArrayList<>();
         List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
         for(YunReleaseTemplet templet:resultList){
             Hversion hversion= (Hversion) JSONUtil.JSONToObj(templet.getHversion(),Hversion.class);
-            if(doctorId.equals(hversion.getDoctor())&&templet.getMbsj()!=null&&!"".equals(templet.getMbsj())){
+            if(templet.getMbsj()!=null&&!"".equals(templet.getMbsj())){
                 List<ModelTemplateVo> mbsj = (List<ModelTemplateVo>) JSONUtil.JSONToObj(templet.getMbsj(),new ArrayList<ModelTemplateVo>().getClass());
                 documentDataElements.addAll(mbsj);
             }
         }
         //如果没有发布数据，则用私有数据
         if(documentDataElements.size()==0){
+            if(null==doctorId||"".equals(doctorId)){
+                YunUsers yunUsers = UserUtils.getYunUsers();
+                doctorId = yunUsers.getId();
+            }
             List<YunDisTemplateVo> yunDisTemplateVos = listWorkFlow(dcode, title, doctorId);
             for (YunDisTemplateVo vo:yunDisTemplateVos){
                 documentDataElements.addAll(vo.getMbsj());
@@ -141,7 +145,7 @@ public class WorkFlowService {
     @GET
     @Path("list-record-doc")
     public List<YunRecordDocment> getYunRecordDocument(@QueryParam("patientId") String patientId){
-        String hql = "select d from YunFolder as f ,YunRecordDocument as d where f.id=d.folderId" +
+        String hql = "select d from YunFolder as f ,YunRecordDocment as d where f.id=d.folderId" +
                 " and f.patientId='"+patientId+"'" ;
         return baseFacade.createQuery(YunRecordDocment.class,hql,new ArrayList<Object>()).getResultList();
     }

@@ -240,9 +240,10 @@ public class TemplateService {
         YunUsers yunUsers = UserUtils.getYunUsers();
         String deptId = yunUsers.getDeptId();
         String id = yunUsers.getId();
-        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  t.title='"+value+"" +
-                "' and ((v.doctorId='0' and v.deptId='0') or (v.doctorId='"+id+"' and v.deptId='"+deptId+"')" +
-                " or (v.doctorId='"+id+"' and v.deptId='0'))" ;
+//        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  v.name='"+value+"" +
+//                "' and ((v.doctorId='0' and v.deptId='0') or (v.doctorId='"+id+"' and v.deptId='"+deptId+"')" +
+//                " or (v.doctorId='"+id+"' and v.deptId='0'))" ;
+        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  v.name='"+value+"'";
 
         List<YunValueFormat> resultList = baseFacade.createQuery(YunValueFormat.class, hql, new ArrayList<Object>()).getResultList();
         if(resultList.size()<1){
@@ -253,11 +254,20 @@ public class TemplateService {
 
         DataElementFormat dataElement = (DataElementFormat) JSONUtil.JSONToObj(yunValueFormat.getFormat(), DataElementFormat.class);
         Extend extend = new Extend();
-        extend.setHead(dataElement.getHead());
-        extend.setPlac(dataElement.getPlac());
+        String extend1 = dataElement.getExtend();
+        if(extend1!=null&&!"".equals(extend1)){
+            Extend obj = (Extend) JSONUtil.JSONToObj(extend1,Extend.class);
+            extend.setHead(obj.getHead());
+            extend.setPlac(obj.getPlac());
+            extend.setTail(obj.getTail());
+        }else{
+            extend.setHead(dataElement.getHead());
+            extend.setPlac(dataElement.getPlac());
+            extend.setTail(dataElement.getTail());
+        }
+        extend.setRelyonvalue(dataElement.getRelyonvalue());
         extend.setRelyon(yunValueFormat.getRelyon());
         extend.setRelyonvalue(dataElement.getRelyonvalue());
-        extend.setTail(dataElement.getTail());
         extend.setTemplet(dataElement.getTemplet());
         elementRow.setExtend(extend);
         elementRow.setType(dataElement.getPart());
@@ -266,11 +276,16 @@ public class TemplateService {
 
         if(dict!=null&&!"".equals(dict)){
             String hqlDict = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"'" +
-                    " and ((yd.deptId='0' and yd.userId='0') or (yd.deptId='0' and yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.userId='"+id+"'))" +
+                    " and ((yd.deptId='0' and yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.userId='"+id+"'))" +
                     " order by yd.userId ,yd.deptId desc" ;
             List<YunDictitem> resultList1 = baseFacade.createQuery(YunDictitem.class, hqlDict, new ArrayList<Object>()).getResultList();
             if(resultList1.size()<1){
-                throw new Exception("获取名称为【"+dict+"】的字典失败");
+                String hqlPubDict = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"' " +
+                        " and yd.userId='0'" ;
+                resultList1 = baseFacade.createQuery(YunDictitem.class, hqlPubDict, new ArrayList<Object>()).getResultList();
+                if(resultList1.size()<0){
+                    throw new Exception("获取名称为【"+dict+"】的字典失败");
+                }
             }
 
             for(YunDictitem yunDictitem:resultList1){
@@ -346,7 +361,7 @@ public class TemplateService {
         yunReleaseTemplet.setHstatus("C");
         yunReleaseTemplet.setMblx(yunDisTemplet.getMblx());
         yunReleaseTemplet.setMbsj(yunDisTemplet.getMbsj());
-        yunReleaseTemplet.setModifyDate((Timestamp) new Date());
+        yunReleaseTemplet.setModifyDate(new Timestamp(new Date().getTime()));
         yunReleaseTemplet.setNote(yunDisTemplet.getNote());
         yunReleaseTemplet.setTitle(title);
         yunReleaseTemplet.setValuedata("");
@@ -476,7 +491,7 @@ public class TemplateService {
 
     @GET
     @Path("get-value-html")
-    public ElementRow getValueHtml(@QueryParam("name") String name ,@QueryParam("pubFlag") String pubFlag) throws Exception {
+    public ElementRow getValueHtml(@QueryParam("name") String name ) throws Exception {
         String hql = "from YunValue as v where 1=1 " ;
 
         YunUsers yunUsers = UserUtils.getYunUsers();
@@ -486,28 +501,14 @@ public class TemplateService {
             hql+=" and v.name='"+name+"'" ;
         }
 
-
-        if("".equals(pubFlag)||pubFlag==null){
-            throw  new Exception("缺少pubFlag，公共私有数据标识。0表示私有数据，1表示公共数据");
-        }
-
-        if("1".equals(pubFlag)){
-            hql += " and v.doctorId='0'" ;
-        }
-
-        if("0".equals(pubFlag)){
-            if(doctorId==null||"".equals(doctorId)){
-                throw  new Exception("缺少doctorId，用户标识");
-            }
-            if(deptId==null||"".equals(deptId)){
-                throw  new Exception("缺少deptId，科室标识 ");
-            }
-            hql+=" and (v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0'))" ;
-        }
-
-        List<YunValue> yunValues = baseFacade.createQuery(YunValue.class,hql,new ArrayList<Object>()).getResultList();
+        String privateHql = hql + " and (v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0'))" ;
+        List<YunValue> yunValues = baseFacade.createQuery(YunValue.class,privateHql,new ArrayList<Object>()).getResultList();
         if(yunValues.size() !=1){
-            throw new Exception("没有找对应的元数据，或者元数据重复，请检查！");
+            String pubHql = hql + " and v.doctorId='0'";
+            yunValues=baseFacade.createQuery(YunValue.class,pubHql,new ArrayList<Object>()).getResultList();
+            if(yunValues.size()!=1){
+                throw new Exception("没有找到名称为：【"+name+"】的元数据！");
+            }
         }
         YunValue yunValue = yunValues.get(0);
         ElementRow elementRow = new ElementRow() ;
