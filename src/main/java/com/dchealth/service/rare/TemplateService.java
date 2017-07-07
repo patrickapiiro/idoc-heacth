@@ -175,8 +175,8 @@ public class TemplateService {
      * @throws Exception
      */
     @GET
-    @Path("get-private-work-from")
-    public Form getPrivateTemplateForm(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+    @Path("get-private-work-form")
+    public Form getPrivateTemplateForm(@QueryParam("dcode")String dcode,@QueryParam("title")String title) throws Exception {
         YunUsers yunUsers = UserUtils.getYunUsers();
         String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
                 " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
@@ -202,8 +202,8 @@ public class TemplateService {
      * @throws Exception
      */
     @GET
-    @Path("get-pub-work-from")
-    public Form getPubTemplateForm(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+    @Path("get-pub-work-form")
+    public Form getPubTemplateForm(@QueryParam("dcode")String dcode,@QueryParam("title")String title) throws Exception {
         String hql = "from YunReleaseTemplet as r where r.hstatus='R' and  r.dcode='"+dcode+"' and r.title='"+title+"'" ;
         List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
         if(resultList.size()>0){
@@ -229,7 +229,7 @@ public class TemplateService {
      */
     @GET
     @Path("get-work-form")
-    public Form getReleaseInfo(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+    public Form getReleaseInfo(@QueryParam("dcode")String dcode,@QueryParam("title")String title) throws Exception {
 
         Form pubTemplateForm = getPubTemplateForm(dcode, title);
         if(pubTemplateForm==null){
@@ -336,6 +336,31 @@ public class TemplateService {
     /**
      * 模板设计保存
      * @param form
+     * @param
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("merge-work-form-design")
+    @Transactional
+    public Response desginWorkFormInfo(Form form,@QueryParam("dcode")String dcode,@QueryParam("title")String title) throws Exception {
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
+                " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
+        List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hqlPrivate, new ArrayList<Object>()).getResultList();
+        if(yunDisTemplets.size()>0){
+            YunDisTemplet templet = yunDisTemplets.get(0);
+            String templateId = templet.getId();
+            return this.desginFormInfo(form,templateId);
+        }else {
+            throw  new Exception("没有找到对应的模板！");
+        }
+
+    }
+
+    /**
+     * 模板设计保存
+     * @param form
      * @param templateId
      * @return
      * @throws Exception
@@ -353,8 +378,6 @@ public class TemplateService {
         YunDisTemplet merge = baseFacade.merge(yunDisTemplet);
         return Response.status(Response.Status.OK).entity(merge).build();
     }
-
-
     /**
      * 发布表单或者工作流
      * @param templateId
@@ -370,11 +393,11 @@ public class TemplateService {
             throw new Exception("") ;
         }
 
-        String decode = yunDisTemplet.getDcode() ;
+        String dcode = yunDisTemplet.getDcode() ;
         String title = yunDisTemplet.getTitle() ;
         String doctorId = yunDisTemplet.getDoctorId() ;
         String deptId = yunDisTemplet.getDeptId();
-        String hql = "from YunReleaseTemplet as r where r.dcode='"+decode+"'" +
+        String hql = "from YunReleaseTemplet as r where r.dcode='"+dcode+"'" +
                 " and r.title='"+title+"'" ;
         Hversion hversion= new Hversion();
         hversion.setDept(deptId);
@@ -389,7 +412,7 @@ public class TemplateService {
             baseFacade.merge(templet);
         }
         YunReleaseTemplet yunReleaseTemplet = new YunReleaseTemplet();
-        yunReleaseTemplet.setDcode(decode);
+        yunReleaseTemplet.setDcode(dcode);
         yunReleaseTemplet.setHstatus("C");
         yunReleaseTemplet.setMblx(yunDisTemplet.getMblx());
         yunReleaseTemplet.setMbsj(yunDisTemplet.getMbsj());

@@ -35,7 +35,7 @@ public class DeptService {
     public Response restDept(@QueryParam("userId") String userId){
         YunUsers yunUsers = baseFacade.get(YunUsers.class,userId);
         String hqlYunValue = "update YunValue as y set y.deptId='"+yunUsers.getDeptId()+"' where y.doctorId='"+userId+"'";
-        String hqlYunDisease = "update YunDiseaseList as y where y.deptId='"+yunUsers.getDeptId()+"' where y.doctorId='"+userId+"'";
+        String hqlYunDisease = "update YunDiseaseList as y set y.deptId='"+yunUsers.getDeptId()+"' where y.doctorId='"+userId+"'";
         baseFacade.excHql(hqlYunDisease);
         baseFacade.excHql(hqlYunValue);
         return Response.status(Response.Status.OK).entity(yunUsers).build();
