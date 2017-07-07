@@ -352,9 +352,8 @@ public class TemplateService {
         for(YunReleaseTemplet templet:resultList){
             String hversion1 = templet.getHversion();
             Hversion tempHversion = (Hversion) JSONUtil.JSONToObj(hversion1, Hversion.class);
-            if(doctorId.equals(tempHversion.getDoctor())&&deptId.equals(tempHversion.getDept())){
-                baseFacade.remove(templet);
-            }
+            templet.setHstatus("A");
+            baseFacade.merge(templet);
         }
         YunReleaseTemplet yunReleaseTemplet = new YunReleaseTemplet();
         yunReleaseTemplet.setDcode(decode);
@@ -386,7 +385,7 @@ public class TemplateService {
         if(yunReleaseTemplet==null){
             throw  new Exception("没有获取到对应的信息");
         }
-        yunReleaseTemplet.setModifyDate((Timestamp) new Date());
+        yunReleaseTemplet.setModifyDate(new Timestamp(new Date().getTime()));
         yunReleaseTemplet.setHstatus("R");
         YunReleaseTemplet releaseTemplet = baseFacade.merge(yunReleaseTemplet);
         return Response.status(Response.Status.OK).entity(releaseTemplet).build();
