@@ -1,5 +1,6 @@
 package com.dchealth.service.common;
 
+import com.dchealth.VO.YunDictTypeAndItemVo;
 import com.dchealth.entity.common.YunDictitem;
 import com.dchealth.entity.common.YunDicttype;
 import com.dchealth.facade.common.BaseFacade;
@@ -151,4 +152,49 @@ public class DictService {
 
     }
 
+    /**
+     * 根据医生id获取其下的所有字典数据信息
+     * @param doctorId
+     * @return
+     */
+    @GET
+    @Path("list-all-value")
+    public YunDictTypeAndItemVo getAllDictAndItem (@QueryParam("doctorId") String doctorId){
+        String hql = " from YunDicttype as type where type.userId = '"+doctorId+"'";
+        List<YunDicttype> yunDicttypes = baseFacade.createQuery(YunDicttype.class,hql,new ArrayList<Object>()).getResultList();
+        String itemHql = "select item from YunDicttype as type,YunDictitem as item where type.typeId = item.typeIdDm and type.userId = '"+doctorId+"'";
+        List<YunDictitem> yunDictitems = baseFacade.createQuery(YunDictitem.class,itemHql,new ArrayList<Object>()).getResultList();
+        YunDictTypeAndItemVo yunDictTypeAndItemVo = new YunDictTypeAndItemVo();
+        yunDictTypeAndItemVo.setDoctorId(doctorId);
+        yunDictTypeAndItemVo.setYunDicttypes(yunDicttypes);
+        yunDictTypeAndItemVo.setYunDictitems(yunDictitems);
+        return yunDictTypeAndItemVo;
+    }
+
+    /**
+     * 导入该医生下的字典及项目信息
+     * @param yunDictTypeAndItemVo
+     * @return
+     */
+    @POST
+    @Path("import-data-value")
+    @Transactional
+    public Response importDictAndItemValue(YunDictTypeAndItemVo yunDictTypeAndItemVo){
+        String doctorId = yunDictTypeAndItemVo.getDoctorId();
+        List<YunDicttype> yunDicttypes = yunDictTypeAndItemVo.getYunDicttypes();
+        List<YunDictitem> yunDictitems = yunDictTypeAndItemVo.getYunDictitems();
+        for(YunDicttype yunDicttype:yunDicttypes){
+            YunDicttype yunDicttype1 = baseFacade.get(YunDicttype.class,yunDicttype.getTypeId());
+            if(yunDicttype1==null){
+                baseFacade.merge(yunDicttype);
+            }
+        }
+        for(YunDictitem yunDictitem:yunDictitems){
+            YunDictitem yunDictitem1 = baseFacade.get(YunDictitem.class,yunDictitem.getSerialNo());
+            if(yunDictitem1==null){
+                baseFacade.merge(yunDictitem);
+            }
+        }
+        return Response.status(Response.Status.OK).entity(doctorId).build();
+    }
 }

@@ -50,7 +50,9 @@ public class GroupService {
     public List<YunUsers> getYunOrganUserList(@QueryParam("id")String id){
         String hql = "select yu from YunOrganNumber as y,YunUsers as yu where y.userId = yu.id ";
         if(id!=null && !"".equals(id)){
-            hql += " and y.id = '" + id +"'";
+            hql += " and y.groupId = '" + id +"'";
+        }else{
+            hql += " and y.groupId = ' '";
         }
         List<YunUsers> yunUsersList = baseFacade.createQuery(YunUsers.class,hql, new ArrayList<Object>()).getResultList();
         return yunUsersList;
@@ -88,7 +90,9 @@ public class GroupService {
         //删除群组信息
         List<String> ids = new ArrayList<>();
         ids.add(id);
-        baseFacade.removeByStringIds(YunOrganNumber.class,ids);
+        String hql = " from YunOrganNumber as y where y.groupId = '"+id+"'";
+        List<YunOrganNumber> yunOrganNumberList = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getResultList();
+        baseFacade.remove(yunOrganNumberList);
         baseFacade.removeByStringIds(YunOrganization.class,ids);
         return Response.status(Response.Status.OK).entity(ids).build();
     }
@@ -106,10 +110,10 @@ public class GroupService {
         boolean isHave = ifExists(yunGroupVo,"0");
         if(!isHave){
             YunOrganNumber yunOrganNumber = new YunOrganNumber();
-            yunOrganNumber.setId(yunGroupVo.getGroupId());
+            yunOrganNumber.setGroupId(yunGroupVo.getGroupId());
             yunOrganNumber.setUserId(yunGroupVo.getUserId());
             yunOrganNumber.setModify_date(new Timestamp(new Date().getTime()));
-            YunOrganNumber merge =  baseFacade.persist(yunOrganNumber);
+            YunOrganNumber merge =  baseFacade.merge(yunOrganNumber);
             YunUsers yunUsers = baseFacade.get(YunUsers.class,merge.getUserId());
             yunGroupUserVo.setYunUsers(yunUsers);
             yunGroupUserVo.setStatus("0");
@@ -125,7 +129,7 @@ public class GroupService {
         String hql = " from ";
         boolean isHave = false;
         if("0".equals(type)){
-            hql += " YunOrganNumber as yn where yn.id = '"+groupId+"' and yn.userId = '"+userId+"'";
+            hql += " YunOrganNumber as yn where yn.groupId = '"+groupId+"' and yn.userId = '"+userId+"'";
             List<YunOrganNumber> list = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getResultList();
             if(list!=null && !list.isEmpty()){
                 isHave = true;
@@ -146,14 +150,22 @@ public class GroupService {
         String groupId = yunGroupVo.getGroupId();
         String userId = yunGroupVo.getUserId();
         if(groupId!=null && !"".equals(groupId)){
-            hql += " and y.id = '"+groupId+"'";
+            hql += " and y.groupId = '"+groupId+"'";
+        }else{
+            hql += " and y.groupId = ' '";
         }
         if(userId!=null && !"".equals(userId)){
             hql += " and y.userId = '"+userId+"'";
+        }else{
+            hql += " and y.userId = ' '";
         }
-        YunOrganNumber yunOrganNumber = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getSingleResult();
-        baseFacade.remove(yunOrganNumber);
-        return Response.status(Response.Status.OK).entity(yunOrganNumber).build();
+        List<YunOrganNumber> yunOrganNumberList = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getResultList();
+        List<String> ids = new ArrayList<String>();
+        for(YunOrganNumber yunOrganNumber:yunOrganNumberList){
+            ids.add(yunOrganNumber.getId());
+        }
+        baseFacade.removeByStringIds(YunOrganNumber.class,ids);
+        return Response.status(Response.Status.OK).entity(yunOrganNumberList).build();
     }
 
     /**
