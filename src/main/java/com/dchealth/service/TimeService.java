@@ -44,6 +44,11 @@ public class TimeService {
         return baseFacade.merge(users);
     }
 
+    @GET
+    @Path("get-by-id")
+    public YunUsers getYunUser(@QueryParam("id") String id){
+        return baseFacade.get(YunUsers.class,id);
+    }
 
     @POST
     @Path("userlogin")

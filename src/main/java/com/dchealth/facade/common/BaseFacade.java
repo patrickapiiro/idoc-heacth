@@ -1,5 +1,6 @@
 package com.dchealth.facade.common;
 
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.util.AliasToBeanResultTransformer;
 import com.google.common.base.Optional;
 import org.hibernate.SQLQuery;
@@ -42,6 +43,15 @@ public class BaseFacade {
             throw new Exception(String.format(msg + ": [%s]", key.toString()));
         }
         return t;
+    }
+
+    /**
+     * 执行更新
+     * @param hql
+     * @return
+     */
+    public int excHql(String hql){
+        return entityManager.createQuery(hql).executeUpdate();
     }
 
     /**
@@ -156,6 +166,7 @@ public class BaseFacade {
         q.setFirstResult(range[0]);
         return q.getResultList();
     }
+
 
     /**
      *
@@ -301,6 +312,8 @@ public class BaseFacade {
     public JpqlQueryBuilder jpqlQueryBuilder(StringBuilder jpql, Object param, String judge, ArrayList<Object> parameters, boolean addWhereOrNot) {
         return new JpqlQueryBuilder(jpql, param, judge, parameters, addWhereOrNot);
     }
+
+
 
     public static class JPQLBuilder {
         private StringBuilder sb = new StringBuilder();

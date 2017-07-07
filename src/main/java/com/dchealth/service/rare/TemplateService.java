@@ -168,18 +168,44 @@ public class TemplateService {
 
 
     /**
-     * 根据疾病编码和标题获取表单数据
+     * 获取私有的模板设计内容
      * @param dcode
      * @param title
      * @return
      * @throws Exception
      */
     @GET
-    @Path("get-work-form")
-    public Form getReleaseInfo(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+    @Path("get-private-work-from")
+    public Form getPrivateTemplateForm(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
+                " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
+        List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hqlPrivate, new ArrayList<Object>()).getResultList();
+        if(yunDisTemplets.size()>0){
+            YunDisTemplet tmplate = yunDisTemplets.get(0);
+            String mbsj = tmplate.getMbsj();
+            if(mbsj!=null&&!"".equals(mbsj)){
+                return getFormData(mbsj);
+            }else{
+                return  null ;
+            }
+        }else{
+            return null ;
+        }
+    }
+
+    /**
+     * 获取已经发布的表单
+     * @param dcode
+     * @param title
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-pub-work-from")
+    public Form getPubTemplateForm(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
         String hql = "from YunReleaseTemplet as r where r.hstatus='R' and  r.dcode='"+dcode+"' and r.title='"+title+"'" ;
         List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
-        YunUsers yunUsers = UserUtils.getYunUsers();
         if(resultList.size()>0){
             YunReleaseTemplet yunReleaseTemplet = resultList.get(0);
             String mbsj = yunReleaseTemplet.getMbsj();
@@ -189,22 +215,29 @@ public class TemplateService {
                 return  null ;
             }
         }else{
-            String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
-                    " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
-            List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hqlPrivate, new ArrayList<Object>()).getResultList();
-            if(yunDisTemplets.size()>0){
-                YunDisTemplet tmplate = yunDisTemplets.get(0);
-                String mbsj = tmplate.getMbsj();
-                if(mbsj!=null&&!"".equals(mbsj)){
-                    return getFormData(mbsj);
-                }else{
-                    return  null ;
-                }
-            }else{
-                return null ;
-            }
+            return null;
         }
+    }
 
+
+    /**
+     * 根据疾病编码和标题获取表单数据
+     * @param dcode
+     * @param title
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-work-form")
+    public Form getReleaseInfo(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+
+        Form pubTemplateForm = getPubTemplateForm(dcode, title);
+        if(pubTemplateForm==null){
+            Form privateTemplateForm = getPrivateTemplateForm(dcode, title);
+            return privateTemplateForm;
+        }else{
+            return pubTemplateForm;
+        }
 
     }
 
