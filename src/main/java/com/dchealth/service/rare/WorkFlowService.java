@@ -16,6 +16,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -188,57 +190,142 @@ public class WorkFlowService {
         PostPara postPara = postData.getPostPara();
         String status = postDocumentData.getStatus();
         YunUsers yunUsers = UserUtils.getYunUsers();
+        String docId = postPara.getDocId();
+        String pid = postPara.getId();
+
+
         if("创建".equals(status)){
-            //创建病人
-            YunPatient patient = new YunPatient();
-            patient.setBr(Timestamp.valueOf(postPara.getBr()));
-            patient.setDoctorId(yunUsers.getId());
-            patient.setDeptId(yunUsers.getDeptId());
-            patient.setEmail(postPara.getEmail());
-            patient.setMid(postPara.getmId());
-            patient.setLxfs(postPara.getLxfs());
-            patient.setNc(postPara.getNc());
-            patient.setNe(postPara.getNc());
-            patient.setPid(postPara.getpId());
-            patient.setTel1(postPara.getTel1());
-            patient.setTel2(postPara.getTel2());
-            patient = baseFacade.merge(patient);
+            YunPatient yunPatient = null ;
+            if(null==docId||"".equals(docId)){
+                if(pid==null||"".equals(pid)){
+                    yunPatient = new YunPatient();
+                    yunPatient= mergePatient(yunPatient,postPara,yunUsers);
+                    //创建病例夹
+                    YunFolder yunFolder = new YunFolder() ;
+                    yunFolder=mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+                    YunRecordDocment yunRecordDocment = new YunRecordDocment();
+                    yunRecordDocment=mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                    return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+                }else{
+                    yunPatient = baseFacade.get(YunPatient.class,pid);
+                    yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                    YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());
+                    yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+                    YunRecordDocment yunRecordDocment = new YunRecordDocment();
+                    yunRecordDocment =mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                    return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+                }
+            }else{
+                YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
+                String folderId = yunRecordDocment.getFolderId();
+                YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
+                String patientId = yunFolder.getPatientId();
+                yunPatient = baseFacade.get(YunPatient.class,patientId);
+                yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+                yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+            }
 
-            //创建病例夹
-            YunFolder yunFolder = new YunFolder() ;
-            yunFolder.setCreateDate((Timestamp) new Date());
-            yunFolder.setActioncode("病例研究");
-            yunFolder.setActionid(String.valueOf(IDUtils.genItemId()));
-            yunFolder.setDiagnosisCode(postDocumentData.getDcode());
-            yunFolder.setDiagnosis(postDocumentData.getDcodeName());
-            yunFolder.setPatientId(patient.getId());
-            yunFolder = baseFacade.merge(yunFolder);
 
-            YunRecordDocment yunRecordDocment = new YunRecordDocment();
-            yunRecordDocment.setCategory(postPara.getCategory());
-            yunRecordDocment.setFolderId(yunFolder.getId());
-            yunRecordDocment.setCreateDate((Timestamp) new Date());
-            yunRecordDocment.setTitle(postPara.getTitle());
-            yunRecordDocment.setTypecode1(postPara.getCode());
-            yunRecordDocment.setTypecode2(postPara.getCodeName());
-            yunRecordDocment.setTempletname(postPara.getMbId());
-            yunRecordDocment.setContent(JSONUtil.objectToJson(postDocumentData).toString());
-            yunRecordDocment.setDoctorId(yunUsers.getId());
-            baseFacade.merge(yunRecordDocment);
-        }else{
-            String docId = postPara.getDocId();
-            YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
-            yunRecordDocment.setCategory(postPara.getCategory());
-            yunRecordDocment.setCreateDate((Timestamp) new Date());
-            yunRecordDocment.setTitle(postPara.getTitle());
-            yunRecordDocment.setTypecode1(postPara.getCode());
-            yunRecordDocment.setTypecode2(postPara.getCodeName());
-            yunRecordDocment.setTempletname(postPara.getMbId());
-            yunRecordDocment.setContent(JSONUtil.objectToJson(postDocumentData).toString());
-            yunRecordDocment.setDoctorId(yunUsers.getId());
-            baseFacade.merge(yunRecordDocment);
         }
-        return Response.status(Response.Status.OK).entity(postData).build();
+
+        if("填写".equals(status)||"完成".equals(status)){
+            if(docId==null||"".equals(docId)){
+                throw new Exception("填写的文档标识符不存在");
+            }
+            YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
+            String folderId = yunRecordDocment.getFolderId();
+            YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
+            String patientId = yunFolder.getPatientId();
+            YunPatient yunPatient = baseFacade.get(YunPatient.class,patientId);
+            yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+            yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+            yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+            return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+        }
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("未进入判断流程，请检查入参").build();
+    }
+
+    /**
+     * 根据病人ID，获取病历夹
+     * @param patientId
+     * @return
+     */
+    private YunFolder getYunFloderByPatientId(String patientId) {
+        String hql ="from YunFolder as f where f.patientId='"+patientId+"'";
+        List<YunFolder> resultList = baseFacade.createQuery(YunFolder.class, hql, new ArrayList<Object>()).getResultList();
+        if(resultList.size()>0){
+            return resultList.get(0);
+        }
+        return null;
+    }
+
+    /**
+     * 设置记录信息
+     * @param yunRecordDocment
+     * @param postPara
+     * @param yunFolder
+     * @param postDocumentData
+     * @param yunUsers
+     * @throws IOException
+     * @throws JSONException
+     */
+    private YunRecordDocment mergeRecordCocument(YunRecordDocment yunRecordDocment, PostPara postPara, YunFolder yunFolder, PostDocumentData postDocumentData, YunUsers yunUsers) throws IOException, JSONException {
+
+        yunRecordDocment.setCategory(postPara.getCategory());
+        yunRecordDocment.setFolderId(yunFolder.getId());
+        yunRecordDocment.setCreateDate(new Timestamp(new Date().getTime()));
+        yunRecordDocment.setTitle(postPara.getTitle());
+        yunRecordDocment.setTypecode1(postPara.getCode());
+        yunRecordDocment.setTypecode2(postPara.getCodeName());
+        yunRecordDocment.setTempletname(postPara.getMbId());
+        yunRecordDocment.setContent(JSONUtil.objectToJson(postDocumentData).toString());
+        yunRecordDocment.setDoctorId(yunUsers.getId());
+        return baseFacade.merge(yunRecordDocment);
+    }
+
+    /**
+     * 设置病历夹信息
+     * @param yunFolder
+     * @param postDocumentData
+     * @param patient
+     */
+    private YunFolder mergeYunFloder(YunFolder yunFolder, PostDocumentData postDocumentData, YunPatient patient) {
+        yunFolder.setCreateDate(new Timestamp(new Date().getTime()));
+        yunFolder.setActioncode("病例研究");
+        yunFolder.setActionid(String.valueOf(IDUtils.genItemId()));
+        yunFolder.setDiagnosisCode(postDocumentData.getDcode());
+        yunFolder.setDiagnosis(postDocumentData.getDcodeName());
+        yunFolder.setPatientId(patient.getId());
+        return yunFolder = baseFacade.merge(yunFolder);
+
+    }
+
+    /**
+     * 设置病人信息
+     * @param patient
+     * @param postPara
+     * @param yunUsers
+     */
+    private YunPatient mergePatient(YunPatient patient, PostPara postPara, YunUsers yunUsers) throws ParseException {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        if(postPara.getBr()!=null){
+            Date date = simpleDateFormat.parse(postPara.getBr());
+            patient.setBr(new Timestamp(date.getTime()));
+        }
+
+        patient.setDoctorId(yunUsers.getId());
+        patient.setDeptId(yunUsers.getDeptId());
+        patient.setEmail(postPara.getEmail());
+        patient.setMid(postPara.getmId());
+        patient.setLxfs(postPara.getLxfs());
+        patient.setNc(postPara.getNc());
+        patient.setNe(postPara.getNc());
+        patient.setPid(postPara.getpId());
+        patient.setTel1(postPara.getTel1());
+        patient.setTel2(postPara.getTel2());
+        return patient = baseFacade.merge(patient);
     }
 
 
@@ -266,7 +353,7 @@ public class WorkFlowService {
             throw  new Exception("参数dcode不能为空");
         }
         if("0".equals(pubFlag)){
-            hql="from YunDiseaseList as yd where yd.dcode='"+dcode+"' and (yd.doctorId='"+doctorId+"' or (yd.deptId='"+deptId+"' and yd.deptId<>'0' ))";
+            hql="from YundisTemplate as yd where yd.dcode='"+dcode+"' and (yd.doctorId='"+doctorId+"' or (yd.deptId='"+deptId+"' and yd.deptId<>'0' ))";
         }
 
         if("1".equals(pubFlag)){
@@ -289,11 +376,11 @@ public class WorkFlowService {
             }
         }
         if("0".equals(pubFlag)){
-            List<YunDiseaseList> yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class,hql,new ArrayList<Object>()).getResultList();
-            for(YunDiseaseList list:yunDiseaseLists){
+            List<YunDisTemplet> yunDiseaseLists = baseFacade.createQuery(YunDisTemplet.class,hql,new ArrayList<Object>()).getResultList();
+            for(YunDisTemplet list:yunDiseaseLists){
                 InfoList infoList = new InfoList();
                 infoList.setId(list.getId());
-                infoList.setName(list.getName());
+                infoList.setName(list.getTitle());
                 infoList.setValue(list.getDcode());
                 infoLists.add(infoList);
             }

@@ -298,9 +298,15 @@ public class TemplateService {
             extend.setPlac(dataElement.getPlac());
             extend.setTail(dataElement.getTail());
         }
-        extend.setRelyonvalue(dataElement.getRelyonvalue());
-        extend.setRelyon(yunValueFormat.getRelyon());
-        extend.setRelyonvalue(dataElement.getRelyonvalue());
+        String relyonvalue = dataElement.getRelyonvalue();
+
+        String relyon = yunValueFormat.getRelyon();
+        if(!"".equals(relyon)&&null!=relyon&&!"".equals(relyonvalue)&&null!=relyonvalue){
+
+        }
+        extend.setRelyon(relyon);
+        extend.setRelyonvalue(relyonvalue);
+
         extend.setTemplet(dataElement.getTemplet());
         elementRow.setExtend(extend);
         elementRow.setType(dataElement.getPart());

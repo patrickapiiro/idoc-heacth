@@ -1,9 +1,10 @@
 /**
  * Copyright &copy; 2012-2013 <a href="https://github.com/thinkgem/jeesite">JeeSite</a> All rights reserved.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  */
 package com.dchealth.security;
+
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.util.UserUtils;
@@ -36,46 +37,43 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 //	private SystemService systemService;
 
 
+    @Autowired
+    private UserFacade userFacade;
 
-	@Autowired
-	private UserFacade userFacade ;
-	/**
-	 * 认证回调函数, 登录时调用
-	 */
-	@Override
-	protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authcToken) throws AuthenticationException {
-		UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
-		try {
-			YunUsers yunUsers = userFacade.getYunUsersByLoginName(token.getUsername());
+    /**
+     * 认证回调函数, 登录时调用
+     */
+    @Override
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authcToken) throws AuthenticationException {
+        UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
+        YunUsers yunUsers = null;
+        try {
+            yunUsers = userFacade.getYunUsersByLoginName(token.getUsername());
+            if ("A".equals(yunUsers.getLoginFlags())) {
+                throw new AuthenticationException("未经审核的用户");
+            }
+            return new SimpleAuthenticationInfo(new Principal(yunUsers), token.getCredentials(), getName());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new AuthenticationException(e.getMessage());
+        }
+    }
 
-			if(yunUsers!=null){
-				return  new SimpleAuthenticationInfo(new Principal(yunUsers),token.getCredentials(),getName()) ;
-			}else{
-
-				return null ;
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new AuthenticationException("不存在的用户");
-		}
-	}
-
-	/**
-	 * 授权查询回调函数, 进行鉴权但缓存中无用户的授权信息时调用
-	 */
-	@Override
-	protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-		Principal principal = (Principal) getAvailablePrincipal(principals);
-		SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
-		info.addStringPermission("user:list");
-		try {
-			YunUsers yunUsers = userFacade.getYunUsersByUserId(principal.getLoginName());
-			UserUtils.putCache("user",yunUsers);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		;
+    /**
+     * 授权查询回调函数, 进行鉴权但缓存中无用户的授权信息时调用
+     */
+    @Override
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+        Principal principal = (Principal) getAvailablePrincipal(principals);
+        SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+        info.addStringPermission("user:list");
+        try {
+            YunUsers yunUsers = userFacade.getYunUsersByUserId(principal.getLoginName());
+            UserUtils.putCache("user", yunUsers);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        ;
 //		User user = getSystemService().getUserByLoginName(principal.getLoginName());
 //		if (user != null) {
 //			UserUtils.putCache("user", user);
@@ -96,96 +94,96 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 //		} else {
 //			return null;
 //		}
-		return  info ;
-	}
-	
-	/**
-	 * 设定密码校验的Hash算法与迭代次数
-	 */
-	@PostConstruct
-	public void initCredentialsMatcher() {
-        HisCredentialsMatcher matcher = new HisCredentialsMatcher() ;
+        return info;
+    }
+
+    /**
+     * 设定密码校验的Hash算法与迭代次数
+     */
+    @PostConstruct
+    public void initCredentialsMatcher() {
+        HisCredentialsMatcher matcher = new HisCredentialsMatcher();
         matcher.setUserFacade(userFacade);
 
-		setCredentialsMatcher(matcher);
-	}
-	
-	/**
-	 * 清空用户关联权限认证，待下次使用时重新加载
-	 */
-	public void clearCachedAuthorizationInfo(String principal) {
-		SimplePrincipalCollection principals = new SimplePrincipalCollection(principal, getName());
-		clearCachedAuthorizationInfo(principals);
-	}
+        setCredentialsMatcher(matcher);
+    }
 
-	/**
-	 * 清空所有关联认证
-	 */
-	public void clearAllCachedAuthorizationInfo() {
-		Cache<Object, AuthorizationInfo> cache = getAuthorizationCache();
-		if (cache != null) {
-			for (Object key : cache.keys()) {
-				cache.remove(key);
-			}
-		}
-	}
+    /**
+     * 清空用户关联权限认证，待下次使用时重新加载
+     */
+    public void clearCachedAuthorizationInfo(String principal) {
+        SimplePrincipalCollection principals = new SimplePrincipalCollection(principal, getName());
+        clearCachedAuthorizationInfo(principals);
+    }
 
-	
-	/**
-	 * 授权用户信息
-	 */
-	public static class Principal implements Serializable {
+    /**
+     * 清空所有关联认证
+     */
+    public void clearAllCachedAuthorizationInfo() {
+        Cache<Object, AuthorizationInfo> cache = getAuthorizationCache();
+        if (cache != null) {
+            for (Object key : cache.keys()) {
+                cache.remove(key);
+            }
+        }
+    }
 
-		private static final long serialVersionUID = 1L;
-		
-		private String id;
-		private String loginName;
-		private String name;
-		private String salt ;
-		private String dbPassword;
-		private Map<String, Object> cacheMap;
 
-		public String getId() {
-			return id;
-		}
+    /**
+     * 授权用户信息
+     */
+    public static class Principal implements Serializable {
 
-		public Principal(YunUsers yunUsers){
-			this.id = String.valueOf(yunUsers.getId());
-			this.loginName = yunUsers.getUserId();
-			this.name = yunUsers.getUserName();
-			this.salt = yunUsers.getSalt();
-			this.dbPassword = yunUsers.getPassword();
-		}
+        private static final long serialVersionUID = 1L;
 
-		public String getLoginName() {
-			return loginName;
-		}
+        private String id;
+        private String loginName;
+        private String name;
+        private String salt;
+        private String dbPassword;
+        private Map<String, Object> cacheMap;
 
-		public String getName() {
-			return name;
-		}
+        public String getId() {
+            return id;
+        }
 
-		public Map<String, Object> getCacheMap() {
-			if (cacheMap==null){
-				cacheMap = new HashMap<String, Object>();
-			}
-			return cacheMap;
-		}
+        public Principal(YunUsers yunUsers) {
+            this.id = String.valueOf(yunUsers.getId());
+            this.loginName = yunUsers.getUserId();
+            this.name = yunUsers.getUserName();
+            this.salt = yunUsers.getSalt();
+            this.dbPassword = yunUsers.getPassword();
+        }
 
-		public String getSalt() {
-			return salt;
-		}
+        public String getLoginName() {
+            return loginName;
+        }
 
-		public void setSalt(String salt) {
-			this.salt = salt;
-		}
+        public String getName() {
+            return name;
+        }
 
-		public String getDbPassword() {
-			return dbPassword;
-		}
+        public Map<String, Object> getCacheMap() {
+            if (cacheMap == null) {
+                cacheMap = new HashMap<String, Object>();
+            }
+            return cacheMap;
+        }
 
-		public void setDbPassword(String dbPassword) {
-			this.dbPassword = dbPassword;
-		}
-	}
+        public String getSalt() {
+            return salt;
+        }
+
+        public void setSalt(String salt) {
+            this.salt = salt;
+        }
+
+        public String getDbPassword() {
+            return dbPassword;
+        }
+
+        public void setDbPassword(String dbPassword) {
+            this.dbPassword = dbPassword;
+        }
+    }
 }
