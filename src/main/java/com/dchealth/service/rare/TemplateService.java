@@ -5,6 +5,7 @@ import com.dchealth.entity.common.YunDictitem;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.YunDisTemplet;
 import com.dchealth.entity.rare.YunReleaseTemplet;
+import com.dchealth.entity.rare.YunValue;
 import com.dchealth.entity.rare.YunValueFormat;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.JSONUtil;
@@ -167,18 +168,44 @@ public class TemplateService {
 
 
     /**
-     * 根据疾病编码和标题获取表单数据
+     * 获取私有的模板设计内容
      * @param dcode
      * @param title
      * @return
      * @throws Exception
      */
     @GET
-    @Path("get-work-form")
-    public Form getReleaseInfo(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+    @Path("get-private-work-from")
+    public Form getPrivateTemplateForm(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
+                " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
+        List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hqlPrivate, new ArrayList<Object>()).getResultList();
+        if(yunDisTemplets.size()>0){
+            YunDisTemplet tmplate = yunDisTemplets.get(0);
+            String mbsj = tmplate.getMbsj();
+            if(mbsj!=null&&!"".equals(mbsj)){
+                return getFormData(mbsj);
+            }else{
+                return  null ;
+            }
+        }else{
+            return null ;
+        }
+    }
+
+    /**
+     * 获取已经发布的表单
+     * @param dcode
+     * @param title
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-pub-work-from")
+    public Form getPubTemplateForm(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
         String hql = "from YunReleaseTemplet as r where r.hstatus='R' and  r.dcode='"+dcode+"' and r.title='"+title+"'" ;
         List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
-        YunUsers yunUsers = UserUtils.getYunUsers();
         if(resultList.size()>0){
             YunReleaseTemplet yunReleaseTemplet = resultList.get(0);
             String mbsj = yunReleaseTemplet.getMbsj();
@@ -188,22 +215,29 @@ public class TemplateService {
                 return  null ;
             }
         }else{
-            String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
-                    " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
-            List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hqlPrivate, new ArrayList<Object>()).getResultList();
-            if(yunDisTemplets.size()>0){
-                YunDisTemplet tmplate = yunDisTemplets.get(0);
-                String mbsj = tmplate.getMbsj();
-                if(mbsj!=null&&!"".equals(mbsj)){
-                    return getFormData(mbsj);
-                }else{
-                    return  null ;
-                }
-            }else{
-                return null ;
-            }
+            return null;
         }
+    }
 
+
+    /**
+     * 根据疾病编码和标题获取表单数据
+     * @param dcode
+     * @param title
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-work-form")
+    public Form getReleaseInfo(@QueryParam("decode")String dcode,@QueryParam("title")String title) throws Exception {
+
+        Form pubTemplateForm = getPubTemplateForm(dcode, title);
+        if(pubTemplateForm==null){
+            Form privateTemplateForm = getPrivateTemplateForm(dcode, title);
+            return privateTemplateForm;
+        }else{
+            return pubTemplateForm;
+        }
 
     }
 
@@ -239,9 +273,10 @@ public class TemplateService {
         YunUsers yunUsers = UserUtils.getYunUsers();
         String deptId = yunUsers.getDeptId();
         String id = yunUsers.getId();
-        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  t.title='"+value+"" +
-                "' and ((v.doctorId='0' and v.deptId='0') or (v.doctorId='"+id+"' and v.deptId='"+deptId+"')" +
-                " or (v.doctorId='"+id+"' and v.deptId='0'))" ;
+//        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  v.name='"+value+"" +
+//                "' and ((v.doctorId='0' and v.deptId='0') or (v.doctorId='"+id+"' and v.deptId='"+deptId+"')" +
+//                " or (v.doctorId='"+id+"' and v.deptId='0'))" ;
+        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  v.name='"+value+"'";
 
         List<YunValueFormat> resultList = baseFacade.createQuery(YunValueFormat.class, hql, new ArrayList<Object>()).getResultList();
         if(resultList.size()<1){
@@ -252,11 +287,20 @@ public class TemplateService {
 
         DataElementFormat dataElement = (DataElementFormat) JSONUtil.JSONToObj(yunValueFormat.getFormat(), DataElementFormat.class);
         Extend extend = new Extend();
-        extend.setHead(dataElement.getHead());
-        extend.setPlac(dataElement.getPlac());
+        String extend1 = dataElement.getExtend();
+        if(extend1!=null&&!"".equals(extend1)){
+            Extend obj = (Extend) JSONUtil.JSONToObj(extend1,Extend.class);
+            extend.setHead(obj.getHead());
+            extend.setPlac(obj.getPlac());
+            extend.setTail(obj.getTail());
+        }else{
+            extend.setHead(dataElement.getHead());
+            extend.setPlac(dataElement.getPlac());
+            extend.setTail(dataElement.getTail());
+        }
+        extend.setRelyonvalue(dataElement.getRelyonvalue());
         extend.setRelyon(yunValueFormat.getRelyon());
         extend.setRelyonvalue(dataElement.getRelyonvalue());
-        extend.setTail(dataElement.getTail());
         extend.setTemplet(dataElement.getTemplet());
         elementRow.setExtend(extend);
         elementRow.setType(dataElement.getPart());
@@ -265,11 +309,16 @@ public class TemplateService {
 
         if(dict!=null&&!"".equals(dict)){
             String hqlDict = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"'" +
-                    " and ((yd.deptId='0' and yd.userId='0') or (yd.deptId='0' and yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.userId='"+id+"'))" +
+                    " and ((yd.deptId='0' and yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.userId='"+id+"'))" +
                     " order by yd.userId ,yd.deptId desc" ;
             List<YunDictitem> resultList1 = baseFacade.createQuery(YunDictitem.class, hqlDict, new ArrayList<Object>()).getResultList();
             if(resultList1.size()<1){
-                throw new Exception("获取名称为【"+dict+"】的字典失败");
+                String hqlPubDict = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"' " +
+                        " and yd.userId='0'" ;
+                resultList1 = baseFacade.createQuery(YunDictitem.class, hqlPubDict, new ArrayList<Object>()).getResultList();
+                if(resultList1.size()<0){
+                    throw new Exception("获取名称为【"+dict+"】的字典失败");
+                }
             }
 
             for(YunDictitem yunDictitem:resultList1){
@@ -336,16 +385,15 @@ public class TemplateService {
         for(YunReleaseTemplet templet:resultList){
             String hversion1 = templet.getHversion();
             Hversion tempHversion = (Hversion) JSONUtil.JSONToObj(hversion1, Hversion.class);
-            if(doctorId.equals(tempHversion.getDoctor())&&deptId.equals(tempHversion.getDept())){
-                baseFacade.remove(templet);
-            }
+            templet.setHstatus("A");
+            baseFacade.merge(templet);
         }
         YunReleaseTemplet yunReleaseTemplet = new YunReleaseTemplet();
         yunReleaseTemplet.setDcode(decode);
         yunReleaseTemplet.setHstatus("C");
         yunReleaseTemplet.setMblx(yunDisTemplet.getMblx());
         yunReleaseTemplet.setMbsj(yunDisTemplet.getMbsj());
-        yunReleaseTemplet.setModifyDate((Timestamp) new Date());
+        yunReleaseTemplet.setModifyDate(new Timestamp(new Date().getTime()));
         yunReleaseTemplet.setNote(yunDisTemplet.getNote());
         yunReleaseTemplet.setTitle(title);
         yunReleaseTemplet.setValuedata("");
@@ -370,7 +418,7 @@ public class TemplateService {
         if(yunReleaseTemplet==null){
             throw  new Exception("没有获取到对应的信息");
         }
-        yunReleaseTemplet.setModifyDate((Timestamp) new Date());
+        yunReleaseTemplet.setModifyDate(new Timestamp(new Date().getTime()));
         yunReleaseTemplet.setHstatus("R");
         YunReleaseTemplet releaseTemplet = baseFacade.merge(yunReleaseTemplet);
         return Response.status(Response.Status.OK).entity(releaseTemplet).build();
@@ -470,5 +518,35 @@ public class TemplateService {
         YunReleaseTemplet yunReleaseTemplet = baseFacade.get(YunReleaseTemplet.class, id);
         baseFacade.remove(yunReleaseTemplet);
         return Response.status(Response.Status.OK).entity(yunReleaseTemplet).build();
+    }
+
+
+    @GET
+    @Path("get-value-html")
+    public ElementRow getValueHtml(@QueryParam("name") String name ) throws Exception {
+        String hql = "from YunValue as v where 1=1 " ;
+
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String doctorId = yunUsers.getId();
+        String deptId = yunUsers.getDeptId();
+        if(name!=null&&!"".equals(name)){
+            hql+=" and v.name='"+name+"'" ;
+        }
+
+        String privateHql = hql + " and (v.doctorId='"+doctorId+"' or (v.deptId='"+deptId+"' and v.deptId <>'0'))" ;
+        List<YunValue> yunValues = baseFacade.createQuery(YunValue.class,privateHql,new ArrayList<Object>()).getResultList();
+        if(yunValues.size() !=1){
+            String pubHql = hql + " and v.doctorId='0'";
+            yunValues=baseFacade.createQuery(YunValue.class,pubHql,new ArrayList<Object>()).getResultList();
+            if(yunValues.size()!=1){
+                throw new Exception("没有找到名称为：【"+name+"】的元数据！");
+            }
+        }
+        YunValue yunValue = yunValues.get(0);
+        ElementRow elementRow = new ElementRow() ;
+        Col col = new Col();
+        col.setValue(yunValue.getName());
+        this.setElementRow(elementRow,col);
+        return elementRow;
     }
 }

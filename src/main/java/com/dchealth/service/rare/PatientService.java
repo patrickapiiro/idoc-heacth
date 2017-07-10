@@ -38,7 +38,8 @@ public class PatientService {
     @GET
     @Path("list-pat")
     public Page<YunPatient> listYunPatient(@QueryParam("doctorId") String doctorId, @QueryParam("dcode") String dcode,
-                                           @QueryParam("perPage")int perPage,@QueryParam("currentPage")int currentPage){
+                                           @QueryParam("nc") String nc,@QueryParam("tel2") String tel2,@QueryParam("pid") String pid,
+                                           @QueryParam("email")String email,@QueryParam("perPage")int perPage,@QueryParam("currentPage")int currentPage){
         String hql = "select p from YunPatient as p ,YunFolder as f where f.patientId =p.id " ;
         String hqlCount = "select count(p) from YunPatient as p ,YunFolder as f where f.patientId =p.id " ;
         if(!"".equals(dcode)&&null!=dcode){
@@ -48,6 +49,22 @@ public class PatientService {
         if(!"".equals(doctorId)&&null!=doctorId){
             hql+=" and p.doctorId = '"+doctorId+"'" ;
             hqlCount+=" and p.doctorId = '"+doctorId+"'" ;
+        }
+        if(!"".equals(nc)&&null!=nc){
+            hql+=" and p.nc = '"+nc+"'" ;
+            hqlCount+=" and p.nc = '"+nc+"'" ;
+        }
+        if(!"".equals(tel2)&&null!=tel2){
+            hql+=" and p.tel2 = '"+tel2+"'" ;
+            hqlCount+=" and p.tel2 = '"+tel2+"'" ;
+        }
+        if(!"".equals(pid)&&null!=pid){
+            hql+=" and p.pid = '"+pid+"'" ;
+            hqlCount+=" and p.pid = '"+pid+"'" ;
+        }
+        if(!"".equals(email)&&null!=email){
+            hql+=" and p.email = '"+email+"'" ;
+            hqlCount+=" and p.email = '"+email+"'" ;
         }
         hql+=" order by p.id";
         hqlCount+=" order by p.id";

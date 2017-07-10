@@ -31,6 +31,22 @@ public class WorkFlowService {
     @Autowired
     private BaseFacade baseFacade ;
 
+
+    /**
+     * 根据ID获取工作流信息
+     * @param id
+     * @return
+     */
+    @GET
+    @Path("get-work-flow")
+    public YunDisTemplateVo getWorkFlow(@QueryParam("id") String id){
+        String hql ="from  YunDisTemplet as t where t.mblx='WORK' and t.id='"+id+"'";
+        YunDisTemplet singleResult = baseFacade.createQuery(YunDisTemplet.class, hql, new ArrayList<Object>()).getSingleResult();
+        YunDisTemplateVo vo = new YunDisTemplateVo();
+        setYunDisTemplateVo(vo,singleResult);
+        return vo ;
+    }
+
     /**
      * 获取工作流模板
      * @param dcode 疾病编码
@@ -55,25 +71,34 @@ public class WorkFlowService {
         List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class,hql,new ArrayList<Object>()).getResultList();
         for(YunDisTemplet templet:yunDisTemplets){
             YunDisTemplateVo vo = new YunDisTemplateVo();
-            vo.setDcode(templet.getDcode());
-            vo.setDeptId(templet.getDeptId());
-            vo.setId(templet.getId());
-            vo.setDoctorId(templet.getDoctorId());
-            vo.setMblx(templet.getMblx());
-            vo.setModifyDate(templet.getModifyDate());
-            vo.setTitle(templet.getTitle());
-            vo.setNote(templet.getNote());
-            String mbsj = templet.getMbsj();
-            if(!"".equals(mbsj)&&null!=mbsj){
-                List<ModelTemplateVo> vos = (List<ModelTemplateVo>) JSONUtil.JSONToObj(templet.getMbsj(),new ArrayList<ModelTemplateVo>().getClass());
-                vo.setMbsj(vos);
-            }else{
-                vo.setMbsj(new ArrayList<ModelTemplateVo>());
-            }
+            setYunDisTemplateVo(vo,templet);
             yunDisTemplateVos.add(vo);
         }
         return yunDisTemplateVos;
 
+    }
+
+    /**
+     * 设置展示对象
+     * @param vo
+     * @param templet
+     */
+    private void setYunDisTemplateVo(YunDisTemplateVo vo ,YunDisTemplet templet){
+        vo.setDcode(templet.getDcode());
+        vo.setDeptId(templet.getDeptId());
+        vo.setId(templet.getId());
+        vo.setDoctorId(templet.getDoctorId());
+        vo.setMblx(templet.getMblx());
+        vo.setModifyDate(templet.getModifyDate());
+        vo.setTitle(templet.getTitle());
+        vo.setNote(templet.getNote());
+        String mbsj = templet.getMbsj();
+        if(!"".equals(mbsj)&&null!=mbsj){
+            List<ModelTemplateVo> vos = (List<ModelTemplateVo>) JSONUtil.JSONToObj(templet.getMbsj(),new ArrayList<ModelTemplateVo>().getClass());
+            vo.setMbsj(vos);
+        }else{
+            vo.setMbsj(new ArrayList<ModelTemplateVo>());
+        }
     }
 
 
@@ -111,19 +136,23 @@ public class WorkFlowService {
      */
     @GET
     @Path("list-work-flow-item")
-    public List<ModelTemplateVo> getWorkFlowDocumentElement(@QueryParam("dcode") String dcode,@QueryParam("title") String title,@QueryParam("doctorId") String doctorId){
+    public List<ModelTemplateVo> getWorkFlowDocumentElement(@QueryParam("dcode") String dcode,@QueryParam("title") String title,@QueryParam("doctorId") String doctorId) throws Exception {
         String hql = "from YunReleaseTemplet as t where t.hstatus='R' and t.dcode='"+dcode+"' and t.title='"+title+"'" ;
         List<ModelTemplateVo> documentDataElements = new ArrayList<>();
         List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
         for(YunReleaseTemplet templet:resultList){
             Hversion hversion= (Hversion) JSONUtil.JSONToObj(templet.getHversion(),Hversion.class);
-            if(doctorId.equals(hversion.getDoctor())&&templet.getMbsj()!=null&&!"".equals(templet.getMbsj())){
+            if(templet.getMbsj()!=null&&!"".equals(templet.getMbsj())){
                 List<ModelTemplateVo> mbsj = (List<ModelTemplateVo>) JSONUtil.JSONToObj(templet.getMbsj(),new ArrayList<ModelTemplateVo>().getClass());
                 documentDataElements.addAll(mbsj);
             }
         }
         //如果没有发布数据，则用私有数据
         if(documentDataElements.size()==0){
+            if(null==doctorId||"".equals(doctorId)){
+                YunUsers yunUsers = UserUtils.getYunUsers();
+                doctorId = yunUsers.getId();
+            }
             List<YunDisTemplateVo> yunDisTemplateVos = listWorkFlow(dcode, title, doctorId);
             for (YunDisTemplateVo vo:yunDisTemplateVos){
                 documentDataElements.addAll(vo.getMbsj());
@@ -141,7 +170,7 @@ public class WorkFlowService {
     @GET
     @Path("list-record-doc")
     public List<YunRecordDocment> getYunRecordDocument(@QueryParam("patientId") String patientId){
-        String hql = "select d from YunFolder as f ,YunRecordDocument as d where f.id=d.folderId" +
+        String hql = "select d from YunFolder as f ,YunRecordDocment as d where f.id=d.folderId" +
                 " and f.patientId='"+patientId+"'" ;
         return baseFacade.createQuery(YunRecordDocment.class,hql,new ArrayList<Object>()).getResultList();
     }
@@ -211,6 +240,67 @@ public class WorkFlowService {
         }
         return Response.status(Response.Status.OK).entity(postData).build();
     }
+
+
+    /**
+     * 获取新增病人随访或者表单内容
+     * @param pubFlag 0位未发布的私有数据，1位发布的数据
+     * @param dcode  疾病编码
+     * @param mblx   模板类型工作流位“WORK”，非工作流为空
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-info-list")
+    public List<InfoList> getInfoList(@QueryParam("pubFlag") String pubFlag,@QueryParam("dcode") String dcode,@QueryParam("mblx") String mblx) throws Exception {
+        String hql = "";
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String doctorId = yunUsers.getId();
+        String deptId = yunUsers.getDeptId();
+        List<InfoList> infoLists = new ArrayList<>();
+        if (null==pubFlag||"".equals(pubFlag)){
+            throw  new Exception("参数pubFlag不能为空");
+        }
+
+        if (null==dcode||"".equals(dcode)){
+            throw  new Exception("参数dcode不能为空");
+        }
+        if("0".equals(pubFlag)){
+            hql="from YunDiseaseList as yd where yd.dcode='"+dcode+"' and (yd.doctorId='"+doctorId+"' or (yd.deptId='"+deptId+"' and yd.deptId<>'0' ))";
+        }
+
+        if("1".equals(pubFlag)){
+            hql="from YunReleaseTemplet as yd where yd.dcode='"+dcode+"'";
+        }
+        if("WORK".equals(mblx)){
+            hql+=" and yd.mblx='WORK'";
+        }else{
+            hql+=" and yd.mbxl <> 'WORK'";
+        }
+
+        if("1".equals(pubFlag)){
+            List<YunReleaseTemplet> yunReleaseTemplets = baseFacade.createQuery(YunReleaseTemplet.class,hql,new ArrayList<Object>()).getResultList();
+            for(YunReleaseTemplet templet:yunReleaseTemplets){
+                InfoList infoList = new InfoList();
+                infoList.setId(templet.getId());
+                infoList.setName(templet.getTitle());
+                infoList.setValue(templet.getDcode());
+                infoLists.add(infoList);
+            }
+        }
+        if("0".equals(pubFlag)){
+            List<YunDiseaseList> yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class,hql,new ArrayList<Object>()).getResultList();
+            for(YunDiseaseList list:yunDiseaseLists){
+                InfoList infoList = new InfoList();
+                infoList.setId(list.getId());
+                infoList.setName(list.getName());
+                infoList.setValue(list.getDcode());
+                infoLists.add(infoList);
+            }
+        }
+        return infoLists;
+    }
+
 
 
 }
