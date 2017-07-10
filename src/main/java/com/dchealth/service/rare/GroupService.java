@@ -1,5 +1,6 @@
 package com.dchealth.service.rare;
 
+import com.dchealth.VO.YunGroupUserVo;
 import com.dchealth.VO.YunGroupVo;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.YunDept;
@@ -49,7 +50,9 @@ public class GroupService {
     public List<YunUsers> getYunOrganUserList(@QueryParam("id")String id){
         String hql = "select yu from YunOrganNumber as y,YunUsers as yu where y.userId = yu.id ";
         if(id!=null && !"".equals(id)){
-            hql += " and y.id = '" + id +"'";
+            hql += " and y.groupId = '" + id +"'";
+        }else{
+            hql += " and y.groupId = ' '";
         }
         List<YunUsers> yunUsersList = baseFacade.createQuery(YunUsers.class,hql, new ArrayList<Object>()).getResultList();
         return yunUsersList;
@@ -87,7 +90,9 @@ public class GroupService {
         //删除群组信息
         List<String> ids = new ArrayList<>();
         ids.add(id);
-        baseFacade.removeByStringIds(YunOrganNumber.class,ids);
+        String hql = " from YunOrganNumber as y where y.groupId = '"+id+"'";
+        List<YunOrganNumber> yunOrganNumberList = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getResultList();
+        baseFacade.remove(yunOrganNumberList);
         baseFacade.removeByStringIds(YunOrganization.class,ids);
         return Response.status(Response.Status.OK).entity(ids).build();
     }
@@ -101,34 +106,66 @@ public class GroupService {
     @Transactional
     @Path("add-organ-number")
     public Response mergeYunOrganNumber(YunGroupVo yunGroupVo){
-        YunOrganNumber yunOrganNumber = new YunOrganNumber();
-        yunOrganNumber.setId(yunGroupVo.getGroupId());
-        yunOrganNumber.setUserId(yunGroupVo.getUserId());
-        yunOrganNumber.setModify_date(new Timestamp(new Date().getTime()));
-        YunOrganNumber merge =  baseFacade.merge(yunOrganNumber);
-        return Response.status(Response.Status.OK).entity(merge).build();
+        YunGroupUserVo yunGroupUserVo = new YunGroupUserVo();
+        boolean isHave = ifExists(yunGroupVo,"0");
+        if(!isHave){
+            YunOrganNumber yunOrganNumber = new YunOrganNumber();
+            yunOrganNumber.setGroupId(yunGroupVo.getGroupId());
+            yunOrganNumber.setUserId(yunGroupVo.getUserId());
+            yunOrganNumber.setModify_date(new Timestamp(new Date().getTime()));
+            YunOrganNumber merge =  baseFacade.merge(yunOrganNumber);
+            YunUsers yunUsers = baseFacade.get(YunUsers.class,merge.getUserId());
+            yunGroupUserVo.setYunUsers(yunUsers);
+            yunGroupUserVo.setStatus("0");
+        }else{
+            yunGroupUserVo.setStatus("1");
+        }
+        return Response.status(Response.Status.OK).entity(yunGroupUserVo).build();
     }
 
+    public boolean ifExists(YunGroupVo yunGroupVo,String type){
+        String userId = yunGroupVo.getUserId();
+        String groupId = yunGroupVo.getGroupId();
+        String hql = " from ";
+        boolean isHave = false;
+        if("0".equals(type)){
+            hql += " YunOrganNumber as yn where yn.groupId = '"+groupId+"' and yn.userId = '"+userId+"'";
+            List<YunOrganNumber> list = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getResultList();
+            if(list!=null && !list.isEmpty()){
+                isHave = true;
+            }
+        }
+        return isHave;
+    }
     /**
-     * 根据传入的群组Id和用户Id删除其关联关系
-     * @param groupId
-     * @param userId
+     * 根据传入的yunGroupVo对象(群组Id和用户Id)删除其关联关系
+     * @param yunGroupVo
      * @return
      */
     @POST
     @Transactional
     @Path("del-organ-number")
-    public Response delYunOrganizationNumber(@QueryParam("groupId") String groupId,@QueryParam("userId") String userId){
+    public Response delYunOrganizationNumber(YunGroupVo yunGroupVo){
         String hql = " from YunOrganNumber as y where 1=1 ";
+        String groupId = yunGroupVo.getGroupId();
+        String userId = yunGroupVo.getUserId();
         if(groupId!=null && !"".equals(groupId)){
-            hql += " and y.id = '"+groupId+"'";
+            hql += " and y.groupId = '"+groupId+"'";
+        }else{
+            hql += " and y.groupId = ' '";
         }
         if(userId!=null && !"".equals(userId)){
             hql += " and y.userId = '"+userId+"'";
+        }else{
+            hql += " and y.userId = ' '";
         }
-        YunOrganNumber yunOrganNumber = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getSingleResult();
-        baseFacade.remove(yunOrganNumber);
-        return Response.status(Response.Status.OK).entity(yunOrganNumber).build();
+        List<YunOrganNumber> yunOrganNumberList = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getResultList();
+        List<String> ids = new ArrayList<String>();
+        for(YunOrganNumber yunOrganNumber:yunOrganNumberList){
+            ids.add(yunOrganNumber.getId());
+        }
+        baseFacade.removeByStringIds(YunOrganNumber.class,ids);
+        return Response.status(Response.Status.OK).entity(yunOrganNumberList).build();
     }
 
     /**
@@ -189,7 +226,7 @@ public class GroupService {
         //删除科室信息
         List<String> ids = new ArrayList<>();
         ids.add(deptId);
-        String hql = " update YunUsers user set user.deptId = 0 where user.deptId = '" + deptId+"'";
+        String hql = " update Yun_Users user set user.dept_Id = 0 where user.dept_Id = '" + deptId+"'";
         baseFacade.createNativeQuery(hql).executeUpdate();
         baseFacade.removeByStringIds(YunDept.class,ids);
         return Response.status(Response.Status.OK).entity(ids).build();
@@ -203,24 +240,29 @@ public class GroupService {
     @Transactional
     @Path("add-dept-user-relation")
     public Response createYunDeptUserRelation(YunGroupVo yunGroupVo){
+        YunGroupUserVo yunGroupUserVo = new YunGroupUserVo();
         String deptId = yunGroupVo.getGroupId();
         String userId = yunGroupVo.getUserId();
-        String hql = " update YunUsers user set user.deptId = '" + deptId +"' where user.id = '"+userId+"' ";
-        int res = baseFacade.createNativeQuery(hql).executeUpdate();
-        return Response.status(Response.Status.OK).entity(res).build();
+        YunUsers yunUsers = baseFacade.get(YunUsers.class,userId);
+        yunUsers.setDeptId(deptId);
+        YunUsers merge = baseFacade.merge(yunUsers);
+        yunGroupUserVo.setYunUsers(merge);
+        yunGroupUserVo.setStatus("0");
+        return Response.status(Response.Status.OK).entity(yunGroupUserVo).build();
     }
 
     /**
-     * 根据传入的科室Id和用户Id删除其关联关系
-     * @param deptId
-     * @param userId
+     * 根据传入的yunGroupVo对象(科室Id和用户Id)删除其关联关系
+     * @param yunGroupVo
      * @return
      */
     @POST
     @Transactional
     @Path("del-user-dept-relation")
-    public Response delYunDeptUserRelation(@QueryParam("deptId") String deptId,@QueryParam("userId") String userId){
-        String hql = " update YunUsers user set user.deptId = 0 where user.id = '"+userId+"' and user.deptId = '"+deptId+"'";
+    public Response delYunDeptUserRelation(YunGroupVo yunGroupVo){
+        String deptId = yunGroupVo.getGroupId();
+        String userId = yunGroupVo.getUserId();
+        String hql = " update Yun_Users user set user.dept_Id = 0 where user.id = '"+userId+"' and user.dept_Id = '"+deptId+"'";
         Integer res = baseFacade.createNativeQuery(hql).executeUpdate();
         return Response.status(Response.Status.OK).entity(res).build();
     }

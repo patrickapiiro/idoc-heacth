@@ -2,6 +2,7 @@ package com.dchealth.service.rare;
 
 import com.dchealth.VO.DataElementFormat;
 import com.dchealth.VO.YunDataFormatVo;
+import com.dchealth.VO.YunValueFormatVo;
 import com.dchealth.entity.rare.YunValue;
 import com.dchealth.entity.rare.YunValueFormat;
 import com.dchealth.facade.common.BaseFacade;
@@ -15,9 +16,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * 元数据管理服务
@@ -186,5 +185,49 @@ public class DataService {
         return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList() ;
     }
 
+    /**
+     * 获取元数据及其格式信息（导出）
+     * @param doctorId
+     * @return
+     */
+    @GET
+    @Path("list-all-value")
+    public YunValueFormatVo getAllYunValueAndFormat(@QueryParam("doctorId") String doctorId){
+        String hql = " from YunValue as y where y.doctorId='"+doctorId+"'" ;
+        List<YunValue> yunValues = baseFacade.createQuery(YunValue.class,hql,new ArrayList<Object>()).getResultList();
+        hql = "select f from YunValue as y,YunValueFormat as f where y.id = f.id and y.doctorId='"+doctorId+"'" ;
+        List<YunValueFormat> yunValueFormats = baseFacade.createQuery(YunValueFormat.class,hql,new ArrayList<Object>()).getResultList();
+        YunValueFormatVo yunValueFormatVo = new YunValueFormatVo();
+        yunValueFormatVo.setDoctorId(doctorId);
+        yunValueFormatVo.setYunValues(yunValues);
+        yunValueFormatVo.setYunValueFormats(yunValueFormats);
+        return yunValueFormatVo;
+    }
 
+    /**
+     * 导入该医生下的元数据及其格式信息（导入）
+     * @param yunValueFormatVo
+     * @return
+     */
+    @POST
+    @Path("import-data-value")
+    @Transactional
+    public Response importYunValueAndFormat(YunValueFormatVo yunValueFormatVo){
+        String doctorId = yunValueFormatVo.getDoctorId();
+        List<YunValue> yunValues = yunValueFormatVo.getYunValues();
+        List<YunValueFormat> yunValueFormats = yunValueFormatVo.getYunValueFormats();
+        for(YunValue yunValue:yunValues){
+            YunValue yunValue1 = baseFacade.get(YunValue.class,yunValue.getId());
+            if(yunValue1==null){
+                baseFacade.merge(yunValue);
+            }
+        }
+        for(YunValueFormat yunValueFormat:yunValueFormats){
+            YunValueFormat yunValueFormat1 = baseFacade.get(YunValueFormat.class,yunValueFormat.getId());
+            if(yunValueFormat1==null){
+                baseFacade.merge(yunValueFormat);
+            }
+        }
+        return Response.status(Response.Status.OK).entity(doctorId).build();
+    }
 }

@@ -80,4 +80,30 @@ public class YunOrganization {
     public void setModify_date(Timestamp modify_date) {
         this.modify_date = modify_date;
     }
+
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (title != null ? title.hashCode() : 0);
+        result = 31 * result + (dcode != null ? dcode.hashCode() : 0);
+        result = 31 * result + (level != null ? level.hashCode() : 0);
+        result = 31 * result + (note != null ? note.hashCode() : 0);
+        result = 31 * result + (modify_date != null ? modify_date.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        YunOrganization that = (YunOrganization)o;
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (title != null ? !title.equals(that.title) : that.title != null) return false;
+        if (dcode != null ? !dcode.equals(that.dcode) : that.dcode != null) return false;
+        if (level != null ? !level.equals(that.level) : that.level != null) return false;
+        if (note != null ? !note.equals(that.note) : that.note != null) return false;
+        if (modify_date != null ? !modify_date.equals(that.modify_date) : that.modify_date != null) return false;
+
+        return true;
+    }
 }
