@@ -3,6 +3,7 @@ package com.dchealth.service.common;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.util.UserUtils;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.IncorrectCredentialsException;
 import org.apache.shiro.authc.UnknownAccountException;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -74,6 +75,8 @@ public class LoginService {
                 throw new Exception("用户名/密码错误");
             } else if ("randomCodeError".equals(exceptionClassName)) {
                 throw new Exception("验证码错误 ");
+            } else if (AuthenticationException.class.getName().equals(exceptionClassName)) {
+                throw new Exception("用户授权失败，请等待审核");
             } else {
                 //最终在异常处理器生成未知错误
                 throw new Exception();

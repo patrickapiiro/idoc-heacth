@@ -7,10 +7,7 @@ package com.dchealth.security;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.util.UserUtils;
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.AuthenticationInfo;
-import org.apache.shiro.authc.AuthenticationToken;
-import org.apache.shiro.authc.SimpleAuthenticationInfo;
+import org.apache.shiro.authc.*;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.cache.Cache;
@@ -47,17 +44,22 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 		UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
 		try {
 			YunUsers yunUsers = userFacade.getYunUsersByLoginName(token.getUsername());
-
 			if(yunUsers!=null){
+				if(!"R".equals(yunUsers.getLoginFlags())){
+					throw new AuthenticationException("用户授权失败，请等待审核");
+				}
 				return  new SimpleAuthenticationInfo(new Principal(yunUsers),token.getCredentials(),getName()) ;
 			}else{
-
-				return null ;
+				throw new UnknownAccountException("不存在的用户");
+				//return null ;
 			}
-
-		} catch (Exception e) {
+		}  catch (Exception e) {
 			e.printStackTrace();
-			throw new AuthenticationException("不存在的用户");
+			if(e instanceof AuthenticationException){
+				throw (AuthenticationException) e;
+			}else{
+				throw new UnknownAccountException(e.getMessage());
+			}
 		}
 	}
 

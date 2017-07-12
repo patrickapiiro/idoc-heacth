@@ -1,8 +1,10 @@
 package com.dchealth.service.rare;
 
+import com.dchealth.VO.Col;
 import com.dchealth.entity.rare.QxUploadFile;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.IDUtils;
+import com.dchealth.util.JSONUtil;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,9 +41,11 @@ public class FileService {
         if(qxUploadFile==null){
             throw new Exception("没有找到文件上传记录！");
         }
-
+        Col col = new Col();
         String path = qxUploadFile.getFilePath();
         System.out.println("数据库存储路径："+path);
+        col.setValue(path);
+        path = JSONUtil.objectToJsonString(col);
         return path;
     }
 
