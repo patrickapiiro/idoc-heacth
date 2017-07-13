@@ -160,7 +160,6 @@ public class TemplateService {
                 rowssubjects.add(rowObject);
             }
             formPage.getPages().add(modelPage);
-
         }
         o.setForm_template(formPage);
         return  o;
@@ -322,8 +321,13 @@ public class TemplateService {
                 String hqlPubDict = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"' " +
                         " and yd.userId='0'" ;
                 resultList1 = baseFacade.createQuery(YunDictitem.class, hqlPubDict, new ArrayList<Object>()).getResultList();
-                if(resultList1.size()<0){
-                    throw new Exception("获取名称为【"+dict+"】的字典失败");
+                if(resultList1.size()<1){
+
+                    String hqlOther = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"' ";
+                    resultList1 = baseFacade.createQuery(YunDictitem.class, hqlOther, new ArrayList<Object>()).getResultList();
+                    if(resultList1.size()<1){
+                        throw new Exception("获取名称为【"+dict+"】的字典失败");
+                    }
                 }
             }
 
