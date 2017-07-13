@@ -192,6 +192,7 @@ public class WorkFlowService {
         YunUsers yunUsers = UserUtils.getYunUsers();
         String docId = postPara.getDocId();
         String pid = postPara.getId();
+        String isBaseInfo = postPara.getIsBaseInfo();
 
 
         if("创建".equals(status)){
@@ -208,7 +209,9 @@ public class WorkFlowService {
                     return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
                 }else{
                     yunPatient = baseFacade.get(YunPatient.class,pid);
-                    yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                    if("1".equals(isBaseInfo)){
+                        yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                    }
                     YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());
                     yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
                     YunRecordDocment yunRecordDocment = new YunRecordDocment();
@@ -221,7 +224,9 @@ public class WorkFlowService {
                 YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
                 String patientId = yunFolder.getPatientId();
                 yunPatient = baseFacade.get(YunPatient.class,patientId);
-                yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                if("1".equals(isBaseInfo)){
+                    yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                }
                 yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
                 yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
                 return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
@@ -232,17 +237,28 @@ public class WorkFlowService {
 
         if("填写".equals(status)||"完成".equals(status)){
             if(docId==null||"".equals(docId)){
-                throw new Exception("填写的文档标识符不存在");
+                if(pid==""||pid==null){
+                    throw new Exception("穿入的病人信息为空，请传递病人ID");
+                }else{
+                    YunPatient yunPatient = baseFacade.get(YunPatient.class,pid);
+                    YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());;
+                    YunRecordDocment yunRecordDocment = new YunRecordDocment();
+                    yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                    return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+                }
+            }else{
+                YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
+                String folderId = yunRecordDocment.getFolderId();
+                YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
+                String patientId = yunFolder.getPatientId();
+                YunPatient yunPatient = baseFacade.get(YunPatient.class,patientId);
+                if("1".equals(isBaseInfo)){
+                    yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                }
+                yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+                yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
             }
-            YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
-            String folderId = yunRecordDocment.getFolderId();
-            YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
-            String patientId = yunFolder.getPatientId();
-            YunPatient yunPatient = baseFacade.get(YunPatient.class,patientId);
-            yunPatient = mergePatient(yunPatient,postPara,yunUsers);
-            yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
-            yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
-            return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
         }
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("未进入判断流程，请检查入参").build();
     }
@@ -325,6 +341,7 @@ public class WorkFlowService {
         patient.setPid(postPara.getpId());
         patient.setTel1(postPara.getTel1());
         patient.setTel2(postPara.getTel2());
+        patient.setSx(postPara.getSx());
         return patient = baseFacade.merge(patient);
     }
 
@@ -353,7 +370,7 @@ public class WorkFlowService {
             throw  new Exception("参数dcode不能为空");
         }
         if("0".equals(pubFlag)){
-            hql="from YundisTemplate as yd where yd.dcode='"+dcode+"' and (yd.doctorId='"+doctorId+"' or (yd.deptId='"+deptId+"' and yd.deptId<>'0' ))";
+            hql="from YunDisTemplet as yd where yd.dcode='"+dcode+"' and (yd.doctorId='"+doctorId+"' or (yd.deptId='"+deptId+"' and yd.deptId<>'0' ))";
         }
 
         if("1".equals(pubFlag)){
@@ -362,7 +379,7 @@ public class WorkFlowService {
         if("WORK".equals(mblx)){
             hql+=" and yd.mblx='WORK'";
         }else{
-            hql+=" and yd.mbxl <> 'WORK'";
+            hql+=" and yd.mblx <> 'WORK'";
         }
 
         if("1".equals(pubFlag)){
