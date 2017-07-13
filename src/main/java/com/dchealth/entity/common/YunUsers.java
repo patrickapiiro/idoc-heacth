@@ -5,6 +5,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.Date;
 
 /**
  * Created by Administrator on 2017/6/5.
@@ -152,13 +153,20 @@ public class YunUsers  {
     @Basic
     @Column(name = "create_date")
     public Timestamp getCreateDate() {
-        return createDate;
+        if (createDate==null){
+            return new Timestamp(new Date().getTime());
+        }else{
+            return createDate;
+        }
     }
 
     public void setCreateDate(Timestamp createDate) {
-        this.createDate = createDate;
+        if (createDate==null){
+            this.createDate=new  Timestamp(new Date().getTime());
+        }else{
+            this.createDate = createDate;
+        }
     }
-
     @Basic
     @Column(name = "modify_date")
     public Timestamp getModifyDate() {

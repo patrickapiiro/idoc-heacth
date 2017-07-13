@@ -72,8 +72,8 @@ public class PatientService {
             hql+=" and p.email = '"+email+"'" ;
             hqlCount+=" and p.email = '"+email+"'" ;
         }
-        hql+=" order by p.id";
-        hqlCount+=" order by p.id";
+        hql+=" order by p.createDate desc";
+        hqlCount+=" order by p.createDate desc";
         TypedQuery<YunPatient> baseFacadeQuery = baseFacade.createQuery(YunPatient.class, hql, new ArrayList<Object>());
         Long count = baseFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
         Page<YunPatient> patientPage= new Page<>();

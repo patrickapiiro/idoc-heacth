@@ -250,6 +250,9 @@ public class YunUserService {
             hql+=" and user.rolename='"+rolename+"'";
             hqlCount+=" and user.rolename='"+rolename+"'";
         }
+
+        hql+=" order by user.createDate desc";
+        hqlCount+=" order by user.createDate desc";
         TypedQuery<YunUsers> query = userFacade.createQuery(YunUsers.class, hql, new ArrayList<Object>());
         Page<YunUsers> yunUsersPage = new Page<>();
         Long counts = userFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
