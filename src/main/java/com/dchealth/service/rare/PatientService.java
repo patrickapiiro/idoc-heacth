@@ -1,18 +1,24 @@
 package com.dchealth.service.rare;
 
+import com.dchealth.VO.DcodeCountInfo;
+import com.dchealth.VO.DiseaseStatisVo;
 import com.dchealth.VO.Page;
+import com.dchealth.entity.common.RoleVsUser;
+import com.dchealth.entity.rare.YunDiseaseList;
+import com.dchealth.entity.rare.YunFolder;
+import com.dchealth.entity.rare.YunFollowUp;
 import com.dchealth.entity.rare.YunPatient;
 import com.dchealth.facade.common.BaseFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import sun.applet.Main;
 
 import javax.persistence.TypedQuery;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -146,5 +152,32 @@ public class PatientService {
         return yunPatientPage;
     }
 
-
+    /**
+     * 根据病人id删除病人相关信息
+     * @param id
+     * @return
+     */
+    @POST
+    @Path("del-patient")
+    @Transactional
+    public Response delPatientInfo(@QueryParam("id") String id){
+        List<String> ids = new ArrayList<>();
+        List<String> yunflupIds = new ArrayList<>();
+        List<String> yunFolderIds = new ArrayList<>();
+        ids.add(id);
+        String flupHql = " from YunFollowUp as yf where yf.patientId = '"+id+"'";
+        List<YunFollowUp> yunFollowUps = baseFacade.createQuery(YunFollowUp.class,flupHql,new ArrayList<Object>()).getResultList();
+        for(YunFollowUp yunFollowUp:yunFollowUps){
+            yunflupIds.add(yunFollowUp.getId());
+        }
+        String folderHql = " from YunFolder as f where f.patientId = '"+id+"'";
+        List<YunFolder> yunFolders = baseFacade.createQuery(YunFolder.class,folderHql,new ArrayList<Object>()).getResultList();
+        for(YunFolder yunFolder:yunFolders){
+            yunFolderIds.add(yunFolder.getId());
+        }
+        baseFacade.removeByStringIds(YunFollowUp.class,yunflupIds);
+        baseFacade.removeByStringIds(YunFolder.class,yunFolderIds);
+        baseFacade.removeByStringIds(YunPatient.class,ids);
+        return Response.status(Response.Status.OK).entity(ids).build();
+    }
 }

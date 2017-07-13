@@ -197,4 +197,33 @@ public class DictService {
         }
         return Response.status(Response.Status.OK).entity(doctorId).build();
     }
+
+    /**
+     * 根据字典名称和字典类型查询其字典项目信息
+     * @param name
+     * @param pubFlag
+     * @return
+     */
+    @GET
+    @Path("list-item-by-name")
+    public List<YunDictitem> getYunDictitemsByTypeName(@QueryParam("name") String name,@QueryParam("pubFlag") String pubFlag){
+        String hql = "select type.typeId from YunDicttype as type where 1=1 ";
+        if("0".equals(pubFlag)){//0为私有字典
+            hql += " and type.userId <> '0' and type.deptId <> '0' " +
+                    " and type.deptId is not null and type.typeName = '"+name+"'";
+        }else if("1".equals(pubFlag)){//1为共有字典
+            hql += " and type.userId = '0' and type.typeName = '"+name+"'";
+        }
+        List<String> typeIds = baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
+        if("0".equals(pubFlag) && (typeIds==null || typeIds.isEmpty())){
+            String hql2 = "select type.typeId from YunDicttype as type " +
+                          " where type.userId <> '0' and (type.deptId = '0' or type.deptId is null) " +
+                          " and type.typeName = '"+name+"'";
+            typeIds = baseFacade.createQuery(String.class,hql2,new ArrayList<Object>()).getResultList();
+        }
+        String typeId = typeIds.isEmpty()?"":typeIds.get(0);
+        String itemHql = "select item from YunDictitem as item where item.typeIdDm = '"+typeId+"'";
+        List<YunDictitem> yunDictitems = baseFacade.createQuery(YunDictitem.class,itemHql,new ArrayList<Object>()).getResultList();
+        return yunDictitems;
+    }
 }

@@ -1,6 +1,7 @@
 package com.dchealth.service.rare;
 
 import com.dchealth.VO.DiseasePatInfo;
+import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.facade.common.BaseFacade;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,10 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Administrator on 2017/6/16.
@@ -99,14 +97,15 @@ public class DiseaseService {
     @Path("list-doctor-pat-info")
     public List<DiseasePatInfo> listDiseasePatInfo(@QueryParam("doctorId") String doctorId){
         List<DiseasePatInfo> diseasePatInfos = new ArrayList<>() ;
-        String hql="select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode and " +
-                "yud.userId='"+doctorId+"'" ;
-        List<YunDiseaseList> yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class, hql, new ArrayList<Object>()).getResultList();
+        Set<String> diseaseSet = getManageDisease(doctorId);
+        String hql="select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
+                    " and yud.userId='"+doctorId+"'" ;
+        List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class, hql, new ArrayList<Object>()).getResultList();
         for(YunDiseaseList list:yunDiseaseLists){
             DiseasePatInfo diseasePatInfo = new DiseasePatInfo(list,Long.parseLong("0"),Long.parseLong("0"));
-            Long patNumber = getPatNumber(doctorId, list.getDcode());
+            Long patNumber = getPatNumber(doctorId, list.getDcode(),diseaseSet);
             diseasePatInfo.setPatNumber(patNumber);
-            diseasePatInfo.setFollowNumber(getPatFollowUp(doctorId,list.getDcode()));
+            diseasePatInfo.setFollowNumber(getPatFollowUp(doctorId,list.getDcode(),diseaseSet));
             diseasePatInfos.add(diseasePatInfo);
         }
         return diseasePatInfos;
@@ -118,10 +117,13 @@ public class DiseaseService {
      * @param dcode
      * @return
      */
-    private Long getPatFollowUp(String doctorId, String dcode) {
+    private Long getPatFollowUp(String doctorId, String dcode,Set diseaseSet) {
         String hql = "select count(*) from YunFollowUp as f,YunPatient as p  where YEAR(f.followDate)=YEAR(current_date()) and " +
                 " MONTH(f.followDate)=MONTH(current_date()) and f.hstatus='R' and f.patientId=p.id" +
-                " and f.dcode='"+dcode+"' and p.doctorId='"+doctorId+"'" ;
+                " and f.dcode='"+dcode+"' ";
+        if(diseaseSet==null || !diseaseSet.contains(dcode)){
+            hql += " and p.doctorId='"+doctorId+"'" ;
+        }
         return baseFacade.createQuery(Long.class,hql,new ArrayList<Object>()).getSingleResult();
     }
 
@@ -131,11 +133,23 @@ public class DiseaseService {
      * @param dcode
      * @return
      */
-    private Long getPatNumber(String doctorId, String dcode) {
+    private Long getPatNumber(String doctorId, String dcode,Set diseaseSet) {
         String hql = "select count(*) from YunFolder as yf ,YunPatient as yp where yf.patientId=yp.id " +
-                " and yp.doctorId='"+doctorId+"' and " +
-                "yf.diagnosisCode='"+dcode+"' " ;
+                     " and yf.diagnosisCode='"+dcode+"' " ;
+        if(diseaseSet==null || !diseaseSet.contains(dcode)){
+            hql += " and yp.doctorId='"+doctorId+"'";
+        }
         return baseFacade.createQuery(Long.class,hql,new ArrayList<Object>()).getSingleResult();
     }
 
+    public Set getManageDisease(String doctorId){
+        Set<String> set = new HashSet<>();
+        String hql = "select ydl from YunUserDiseaseManager yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
+                " and yud.userId='"+doctorId+"'" ;
+        List<YunDiseaseList> yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class, hql, new ArrayList<Object>()).getResultList();
+        for(YunDiseaseList yunDiseaseList:yunDiseaseLists){
+            set.add(yunDiseaseList.getDcode());
+        }
+        return set;
+    }
 }
