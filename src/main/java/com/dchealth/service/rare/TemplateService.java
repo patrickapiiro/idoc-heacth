@@ -282,7 +282,8 @@ public class TemplateService {
             throw new Exception("获取名称为【"+value+"】的元数据格式失败！");
         }
         YunValueFormat yunValueFormat = resultList.get(0);
-
+        YunValue yunValue =baseFacade.get(YunValue.class,yunValueFormat.getId());
+        String valueDoctorId = yunValue.getDoctorId();
 
         DataElementFormat dataElement = (DataElementFormat) JSONUtil.JSONToObj(yunValueFormat.getFormat(), DataElementFormat.class);
         Extend extend = new Extend();
@@ -323,7 +324,8 @@ public class TemplateService {
                 resultList1 = baseFacade.createQuery(YunDictitem.class, hqlPubDict, new ArrayList<Object>()).getResultList();
                 if(resultList1.size()<1){
 
-                    String hqlOther = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"' ";
+                    String hqlOther = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"'" +
+                            " and yd.userId='"+valueDoctorId+"' ";
                     resultList1 = baseFacade.createQuery(YunDictitem.class, hqlOther, new ArrayList<Object>()).getResultList();
                     if(resultList1.size()<1){
                         throw new Exception("获取名称为【"+dict+"】的字典失败");
