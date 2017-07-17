@@ -22,13 +22,14 @@ public class PatientFollowUpVo  implements Serializable{
     private String tel2;
     private String yzbm;
     private String email;
+    private Date createDate;
     private String followId;
     private String title;
     private String dcode;
     private Date followDate;
     private Date remindDate;
 
-    public PatientFollowUpVo(String id, String doctorId, String deptId, String pid, String mid, String nc, String ne, String sx, Date br, String lxfs, String tel1, String tel2, String yzbm, String email, String followId, String title, String dcode, Date followDate, Date remindDate) {
+    public PatientFollowUpVo(String id, String doctorId, String deptId, String pid, String mid, String nc, String ne, String sx, Date br, String lxfs, String tel1, String tel2, String yzbm, String email,Date createDate, String followId, String title, String dcode, Date followDate, Date remindDate) {
         super();
         this.id = id;
         this.doctorId = doctorId;
@@ -44,6 +45,7 @@ public class PatientFollowUpVo  implements Serializable{
         this.tel2 = tel2;
         this.yzbm = yzbm;
         this.email = email;
+        this.createDate = createDate;
         this.followId = followId;
         this.title = title;
         this.dcode = dcode;
@@ -204,5 +206,13 @@ public class PatientFollowUpVo  implements Serializable{
 
     public void setRemindDate(Date remindDate) {
         this.remindDate = remindDate;
+    }
+
+    public Date getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
     }
 }

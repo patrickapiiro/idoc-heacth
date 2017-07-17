@@ -193,7 +193,8 @@ public class WorkFlowService {
         String docId = postPara.getDocId();
         String pid = postPara.getId();
         String isBaseInfo = postPara.getIsBaseInfo();
-
+        String followId = postPara.getFollowId();
+        modifyFollowUpStatus(followId);
 
         if("创建".equals(status)){
             YunPatient yunPatient = null ;
@@ -238,7 +239,7 @@ public class WorkFlowService {
         if("填写".equals(status)||"完成".equals(status)){
             if(docId==null||"".equals(docId)){
                 if(pid==""||pid==null){
-                    throw new Exception("穿入的病人信息为空，请传递病人ID");
+                    throw new Exception("传入的病人信息为空，请传递病人ID");
                 }else{
                     YunPatient yunPatient = baseFacade.get(YunPatient.class,pid);
                     YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());;
@@ -263,6 +264,18 @@ public class WorkFlowService {
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("未进入判断流程，请检查入参").build();
     }
 
+    public void modifyFollowUpStatus(String followId){
+        if(followId!=null && !"".equals(followId)){
+            String hql = " from YunFollowUp as f where f.hstatus = 'S' and f.id = '"+followId+"'";
+            List<YunFollowUp> yunFollowUps = baseFacade.createQuery(YunFollowUp.class,hql,new ArrayList<Object>()).getResultList();
+            if(yunFollowUps!=null && !yunFollowUps.isEmpty()){
+                YunFollowUp yunFollowUp = yunFollowUps.get(0);
+                yunFollowUp.setHstatus("R");
+                yunFollowUp.setModifyDate(new Timestamp(new Date().getTime()));
+                baseFacade.merge(yunFollowUp);
+            }
+        }
+    }
     /**
      * 根据病人ID，获取病历夹
      * @param patientId

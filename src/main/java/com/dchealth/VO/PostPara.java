@@ -23,6 +23,7 @@ public class PostPara implements Serializable {
     private String id ;//病人ID
     private String docId ;//文档ID
     private String isBaseInfo ;
+    private String followId;//随访计划ID
 
     public String getCode() {
         return code;
@@ -158,5 +159,13 @@ public class PostPara implements Serializable {
 
     public void setIsBaseInfo(String isBaseInfo) {
         this.isBaseInfo = isBaseInfo;
+    }
+
+    public String getFollowId() {
+        return followId;
+    }
+
+    public void setFollowId(String followId) {
+        this.followId = followId;
     }
 }

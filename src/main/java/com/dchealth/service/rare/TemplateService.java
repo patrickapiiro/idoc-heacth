@@ -503,8 +503,7 @@ public class TemplateService {
                 hql +=" and t.hstatus = '"+hstatus+"'";
             }
         }
-        List<YunReleaseTemplet> yunReleaseTemplets = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
-        return yunReleaseTemplets;
+        return baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
     }
 
     /**

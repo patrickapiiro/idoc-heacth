@@ -107,7 +107,7 @@ public class PatientService {
                                               @QueryParam("hstatus")String hstatus,@QueryParam("perPage")int perPage,@QueryParam("currentPage")int currentPage){
         Page<PatientFollowUpVo> yunPatientPage = new Page<>();
         String hqlCount = "select count(p) from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId" ;
-        String pfHql = "select new com.dchealth.VO.PatientFollowUpVo(p.id,p.doctorId,p.deptId,p.pid,p.mid,p.nc,p.ne,p.sx,p.br,p.lxfs,p.tel1,p.tel2,p.yzbm,p.email, yf.id, yf.title, yf.dcode, yf.followDate, yf.remindDate) from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId";
+        String pfHql = "select new com.dchealth.VO.PatientFollowUpVo(p.id,p.doctorId,p.deptId,p.pid,p.mid,p.nc,p.ne,p.sx,p.br,p.lxfs,p.tel1,p.tel2,p.yzbm,p.email,p.createDate, yf.id, yf.title, yf.dcode, yf.followDate, yf.remindDate) from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId";
         if(!"".equals(doctorId)&null!=doctorId){
             pfHql += " and p.doctorId='"+doctorId+"'" ;
             hqlCount += " and p.doctorId='"+doctorId+"'" ;

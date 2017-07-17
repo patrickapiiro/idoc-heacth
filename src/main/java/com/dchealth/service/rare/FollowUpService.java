@@ -143,13 +143,11 @@ public class FollowUpService {
         if(yunRecordDocments!=null && !yunRecordDocments.isEmpty()){
             YunRecordDocment yunRecordDocment = yunRecordDocments.get(0);
             String content = yunRecordDocment.getContent();
-            FollowUpPlainVo dbFollowUpPlainVo = (FollowUpPlainVo)JSONUtil.JSONToObj(content,FollowUpPlainVo.class);
-            Boolean isEqual = judgeFollowUpPlain(followUpPlainVo,dbFollowUpPlainVo);
             if(!"".equals(jsonContent) && !jsonContent.equals(content)){//随访计划不一致则保存更新
                 yunRecordDocment.setContent(jsonContent);
                 yunRecordDocment.setModifyDate(new Timestamp(new Date().getTime()));
                 baseFacade.merge(yunRecordDocment);
-                addFollowUp(followUpPlainVo,sickId,isEqual);
+                addFollowUp(followUpPlainVo,sickId);
              }
            }else{
                 String folderHql = " from YunFolder as f where f.patientId = '"+sickId+"' and f.diagnosisCode = '"+dcode+"'";
@@ -164,7 +162,7 @@ public class FollowUpService {
                 }
                 YunRecordDocment yunRecordDocment = new YunRecordDocment();
                 mergeYunRecordDocment(yunRecordDocment,folderId,jsonContent);
-                addFollowUp(followUpPlainVo,sickId,false);
+                addFollowUp(followUpPlainVo,sickId);
            }
         }  catch (Exception e) {
             e.printStackTrace();
@@ -209,9 +207,8 @@ public class FollowUpService {
      * @param followUpPlainVo
      * @param sickId
      */
-    public void addFollowUp(FollowUpPlainVo followUpPlainVo,String sickId,Boolean isEqual){
+    public void addFollowUp(FollowUpPlainVo followUpPlainVo,String sickId){
         List<FollowRecordData> followRecordDatas = followUpPlainVo.getData();
-        if(!isEqual){
             for(FollowRecordData followRecordData:followRecordDatas){
                 YunFollowUp yunFollowUp = new YunFollowUp();
                 yunFollowUp.setPatientId(sickId);
@@ -223,58 +220,5 @@ public class FollowUpService {
                 yunFollowUp.setTitle(followRecordData.getTitle());
                 baseFacade.merge(yunFollowUp);
             }
-        }else {
-            changeFollowUpStatus(followRecordDatas);
-        }
-    }
-
-    public void changeFollowUpStatus(List<FollowRecordData> followRecordDatas){
-        if(followRecordDatas!=null && !followRecordDatas.isEmpty()){
-            String fids = ",";
-            for(FollowRecordData followRecordData:followRecordDatas){
-                String fid = followRecordData.getFollowId();
-                if(fid!=null && !"".equals(fid)){
-                    fids += "'"+fid+"'";
-                }
-            }
-            fids = fids.substring(1,fids.length());
-            String hql = " from YunFollowUp as f where f.hstatus = 'S' and f.id in ("+fids+")";
-            List<YunFollowUp> yunFollowUps = baseFacade.createQuery(YunFollowUp.class,hql,new ArrayList<Object>()).getResultList();
-            if(yunFollowUps!=null && !yunFollowUps.isEmpty()){
-                for(int i=0;i<yunFollowUps.size();i++){
-                    YunFollowUp yunFollowUp = yunFollowUps.get(i);
-                    yunFollowUp.setHstatus("R");
-                    yunFollowUp.setModifyDate(new Timestamp(new Date().getTime()));
-                    baseFacade.merge(yunFollowUp);
-                }
-            }
-        }
-    }
-    public Boolean judgeFollowUpPlain(FollowUpPlainVo followUpPlainVo,FollowUpPlainVo dbFollowUpPlainVo){
-        Boolean isEqual = false;
-        try {
-            followUpPlainVo = changeFollowVo(followUpPlainVo);
-            dbFollowUpPlainVo = changeFollowVo(dbFollowUpPlainVo);
-            String submitContent = JSONUtil.objectToJsonString(followUpPlainVo);
-            String dbContent = JSONUtil.objectToJsonString(dbFollowUpPlainVo);
-            if(dbContent.equals(submitContent)){
-                isEqual = true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return isEqual;
-    }
-
-    public FollowUpPlainVo changeFollowVo(FollowUpPlainVo followUpPlainVo){
-       List<FollowRecordData> followRecordDatas = followUpPlainVo.getData();
-       if(followRecordDatas==null || followRecordDatas.isEmpty()){
-          return followUpPlainVo;
-       }
-       for(int i=0;i<followRecordDatas.size();i++){
-           FollowRecordData followRecordData = followRecordDatas.get(i);
-           followRecordData.setFollowId("");
-       }
-       return followUpPlainVo;
     }
 }
