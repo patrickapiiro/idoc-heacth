@@ -172,7 +172,7 @@ public class WorkFlowService {
     @GET
     @Path("list-record-doc")
     public List<YunRecordDocment> getYunRecordDocument(@QueryParam("patientId") String patientId){
-        String hql = "select d from YunFolder as f ,YunRecordDocment as d where f.id=d.folderId" +
+        String hql = "select d from YunFolder as f ,YunRecordDocment as d where f.id=d.folderId and d.category <> 'S'" +
                 " and f.patientId='"+patientId+"'" ;
         return baseFacade.createQuery(YunRecordDocment.class,hql,new ArrayList<Object>()).getResultList();
     }

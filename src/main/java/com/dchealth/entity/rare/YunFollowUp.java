@@ -12,8 +12,8 @@ import java.sql.Timestamp;
 @Table(name = "yun_follow_up", schema = "emhbase", catalog = "")
 public class YunFollowUp {
     private String id;
-    private Long patientId;
-    private Long serialNumber;
+    private String patientId;
+    private String serialNumber;
     private Timestamp followDate;
     private Timestamp remindDate;
     private Timestamp modifyDate;
@@ -36,21 +36,21 @@ public class YunFollowUp {
 
     @Basic
     @Column(name = "patient_id")
-    public Long getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 
     @Basic
     @Column(name = "serial_number")
-    public Long getSerialNumber() {
+    public String getSerialNumber() {
         return serialNumber;
     }
 
-    public void setSerialNumber(Long serialNumber) {
+    public void setSerialNumber(String serialNumber) {
         this.serialNumber = serialNumber;
     }
 

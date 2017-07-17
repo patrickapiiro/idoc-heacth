@@ -3,6 +3,7 @@ package com.dchealth.service.rare;
 import com.dchealth.VO.DcodeCountInfo;
 import com.dchealth.VO.DiseaseStatisVo;
 import com.dchealth.VO.Page;
+import com.dchealth.VO.PatientFollowUpVo;
 import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.entity.rare.YunFolder;
@@ -17,10 +18,7 @@ import sun.applet.Main;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Administrator on 2017/6/23.
@@ -103,52 +101,53 @@ public class PatientService {
      */
     @GET
     @Path("list-follow-pat")
-    public Page<YunPatient> listFollowPatient(@QueryParam("doctorId") String doctorId, @QueryParam("followDateBegin") String followDateBegin,
+    public Page<PatientFollowUpVo> listFollowPatient(@QueryParam("doctorId") String doctorId, @QueryParam("followDateBegin") String followDateBegin,
                                               @QueryParam("followDateEnd") String followDateEnd,@QueryParam("remindDateBegin") String remindDateBegin,
                                               @QueryParam("remindDateEnd")String remindDateEnd,@QueryParam("dcode")String dcode,
                                               @QueryParam("hstatus")String hstatus,@QueryParam("perPage")int perPage,@QueryParam("currentPage")int currentPage){
-        Page<YunPatient> yunPatientPage = new Page<>();
-        String hql = "select p from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId" ;
+        Page<PatientFollowUpVo> yunPatientPage = new Page<>();
         String hqlCount = "select count(p) from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId" ;
+        String pfHql = "select new com.dchealth.VO.PatientFollowUpVo(p.id,p.doctorId,p.deptId,p.pid,p.mid,p.nc,p.ne,p.sx,p.br,p.lxfs,p.tel1,p.tel2,p.yzbm,p.email, yf.id, yf.title, yf.dcode, yf.followDate, yf.remindDate) from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId";
         if(!"".equals(doctorId)&null!=doctorId){
-            hql += " and p.doctorId='"+doctorId+"'" ;
+            pfHql += " and p.doctorId='"+doctorId+"'" ;
             hqlCount += " and p.doctorId='"+doctorId+"'" ;
         }
         if(!"".equals(followDateBegin)&null!=followDateBegin){
-            hql += " and to_days(yf.followDate)>=to_days('"+followDateBegin+"')" ;
+            pfHql +=" and to_days(yf.followDate)>=to_days('"+followDateBegin+"')" ;
             hqlCount += " and to_days(yf.followDate)>=to_days('"+followDateBegin+"')" ;
         }
         if(!"".equals(followDateEnd)&null!=followDateEnd){
-            hql += " and to_days(yf.followDate)<=to_days('"+followDateEnd+"')" ;
+            pfHql += " and to_days(yf.followDate)<=to_days('"+followDateEnd+"')" ;
             hqlCount += " and to_days(yf.followDate)<=to_days('"+followDateEnd+"')" ;
         }
         if(!"".equals(remindDateBegin)&null!=remindDateBegin){
-            hql += " and to_days(yf.remindDate)>=to_days('"+remindDateBegin+"')" ;
+            pfHql += " and to_days(yf.remindDate)>=to_days('"+remindDateBegin+"')" ;
             hqlCount += " and to_days(yf.remindDate)>=to_days('"+remindDateBegin+"')" ;
         }
         if(!"".equals(remindDateEnd)&null!=remindDateEnd){
-            hql += " and to_days(yf.remindDate)<=to_days('"+remindDateEnd+"')" ;
+            pfHql += " and to_days(yf.remindDate)<=to_days('"+remindDateEnd+"')" ;
             hqlCount += " and to_days(yf.remindDate)<=to_days('"+remindDateEnd+"')" ;
         }
 
         if(!"".equals(dcode)&null!=dcode){
-            hql += " and yf.dcode='"+dcode+"'" ;
+            pfHql += " and yf.dcode='"+dcode+"'" ;
             hqlCount += " and yf.dcode='"+dcode+"'" ;
         }
 
         if(!"".equals(hstatus)&null!=hstatus){
-            hql += " and yf.hstatus='"+hstatus+"'" ;
+            pfHql += " and yf.hstatus='"+hstatus+"'" ;
             hqlCount += " and yf.hstatus='"+hstatus+"'" ;
         }
         Long aLong = baseFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
-        TypedQuery<YunPatient> baseFacadeQuery = baseFacade.createQuery(YunPatient.class, hql, new ArrayList<Object>());
-
+        TypedQuery<PatientFollowUpVo> pfBaseTypedQuery = baseFacade.createQuery(PatientFollowUpVo.class, pfHql, new ArrayList<Object>());
         yunPatientPage.setCounts(aLong);
         if(perPage>0){
-            baseFacadeQuery.setFirstResult(currentPage*perPage) ;
-            baseFacadeQuery.setMaxResults(perPage);
+            pfBaseTypedQuery.setFirstResult(currentPage*perPage) ;
+            pfBaseTypedQuery.setMaxResults(perPage);
         }
-        yunPatientPage.setData(baseFacadeQuery.getResultList());
+        List<PatientFollowUpVo> patientFollowUpVos = pfBaseTypedQuery.getResultList();
+        //yunPatientPage.setData(baseFacadeQuery.getResultList());
+        yunPatientPage.setData(patientFollowUpVos);
         return yunPatientPage;
     }
 
