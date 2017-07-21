@@ -33,6 +33,8 @@
                 /api/yun-user/regist=anon
                 /login.html=anon
                 /api/hospital=anon
+                /api/knowledge/list-disease-type = anon
+                /api/knowledge/list-disease-knowledge = anon
                 /api/login=authc
                 /api/**=authc
                 /logout = logout

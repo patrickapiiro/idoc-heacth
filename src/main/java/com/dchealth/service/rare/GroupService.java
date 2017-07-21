@@ -92,7 +92,9 @@ public class GroupService {
         ids.add(id);
         String hql = " from YunOrganNumber as y where y.groupId = '"+id+"'";
         List<YunOrganNumber> yunOrganNumberList = baseFacade.createQuery(YunOrganNumber.class,hql,new ArrayList<Object>()).getResultList();
-        baseFacade.remove(yunOrganNumberList);
+        for(YunOrganNumber yunOrganNumber:yunOrganNumberList){
+            baseFacade.remove(yunOrganNumber);
+        }
         baseFacade.removeByStringIds(YunOrganization.class,ids);
         return Response.status(Response.Status.OK).entity(ids).build();
     }

@@ -183,4 +183,12 @@ public class StringUtils {
         }
         return streamingOutput;
     }
+
+    public static Boolean isEmpty(String input){
+        Boolean isEmpty = false;
+        if(input==null || "".equals(input)){
+            isEmpty = true;
+        }
+        return isEmpty;
+    }
 }

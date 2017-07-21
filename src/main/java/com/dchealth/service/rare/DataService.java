@@ -49,7 +49,7 @@ public class DataService {
         }
 
         if ("未分组".equals(zflags)){
-            hql+=" and v.zflags =''";
+            hql+=" and  v.zflags is null ";
         }
 
         if(name!=null&&!"".equals(name)){
@@ -216,18 +216,25 @@ public class DataService {
         String doctorId = yunValueFormatVo.getDoctorId();
         List<YunValue> yunValues = yunValueFormatVo.getYunValues();
         List<YunValueFormat> yunValueFormats = yunValueFormatVo.getYunValueFormats();
+        Map<String,String> yunValueIdsMap = new HashMap<>();
+        removeYunValueByDoctorId(doctorId);
         for(YunValue yunValue:yunValues){
-            YunValue yunValue1 = baseFacade.get(YunValue.class,yunValue.getId());
-            if(yunValue1==null){
-                baseFacade.merge(yunValue);
-            }
+            YunValue merge = baseFacade.merge(yunValue);
+            yunValueIdsMap.put(yunValue.getId(),merge.getId());
         }
         for(YunValueFormat yunValueFormat:yunValueFormats){
-            YunValueFormat yunValueFormat1 = baseFacade.get(YunValueFormat.class,yunValueFormat.getId());
-            if(yunValueFormat1==null){
-                baseFacade.merge(yunValueFormat);
-            }
+            yunValueFormat.setId(yunValueIdsMap.get(yunValueFormat.getId()));
+            baseFacade.merge(yunValueFormat);
         }
         return Response.status(Response.Status.OK).entity(doctorId).build();
+    }
+
+    /**
+     * 根据医生id删除元数据信息
+     * @param doctorId
+     */
+    public void removeYunValueByDoctorId(String doctorId){
+        String hql = "delete from YunValue where doctorId = '"+doctorId+"'";
+        baseFacade.excHql(hql);
     }
 }

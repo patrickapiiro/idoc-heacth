@@ -497,11 +497,7 @@ public class TemplateService {
             hql+=" and t.mblx='"+mblx+"'" ;
         }
         if(!"".equals(hstatus) && hstatus!=null){
-            if("未通过".equals(hstatus)){
-                hql +=" and t.hstatus = ' '";
-            }else{
                 hql +=" and t.hstatus = '"+hstatus+"'";
-            }
         }
         return baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
     }

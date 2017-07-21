@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Administrator on 2017/6/16.
@@ -183,19 +185,68 @@ public class DictService {
         String doctorId = yunDictTypeAndItemVo.getDoctorId();
         List<YunDicttype> yunDicttypes = yunDictTypeAndItemVo.getYunDicttypes();
         List<YunDictitem> yunDictitems = yunDictTypeAndItemVo.getYunDictitems();
+        Map<String,String> newDictypeIdMap = new HashMap<>();
+        Map<String,String> oldDictypeIdMap = new HashMap<>();
         for(YunDicttype yunDicttype:yunDicttypes){
-            YunDicttype yunDicttype1 = baseFacade.get(YunDicttype.class,yunDicttype.getTypeId());
+            YunDicttype yunDicttype1 = getYunDicttypeByName(yunDicttype.getTypeName(),doctorId);
             if(yunDicttype1==null){
-                baseFacade.merge(yunDicttype);
+                YunDicttype merge = baseFacade.merge(yunDicttype);
+                newDictypeIdMap.put(yunDicttype.getTypeId(),merge.getTypeId());
+            }else{
+                oldDictypeIdMap.put(yunDicttype.getTypeId(),yunDicttype1.getTypeId());
             }
         }
+        dealOldYunDictItems(oldDictypeIdMap);
         for(YunDictitem yunDictitem:yunDictitems){
             YunDictitem yunDictitem1 = baseFacade.get(YunDictitem.class,yunDictitem.getSerialNo());
-            if(yunDictitem1==null){
-                baseFacade.merge(yunDictitem);
+            if(yunDictitem1!=null){
+                continue;
             }
+            if(newDictypeIdMap.containsKey(yunDictitem.getTypeIdDm())){
+                yunDictitem.setTypeIdDm(newDictypeIdMap.get(yunDictitem.getTypeIdDm()));
+            }else if(oldDictypeIdMap.containsKey(yunDictitem.getTypeIdDm())){
+                yunDictitem.setTypeIdDm(oldDictypeIdMap.get(yunDictitem.getTypeIdDm()));
+            }
+
+            baseFacade.merge(yunDictitem);
         }
         return Response.status(Response.Status.OK).entity(doctorId).build();
+    }
+
+    /**
+     * 删除字典项下的字典信息
+     * @param oldDictypeIdMap
+     */
+    public void dealOldYunDictItems(Map<String,String> oldDictypeIdMap){
+        if(oldDictypeIdMap!=null && !oldDictypeIdMap.isEmpty()){
+            for(String key:oldDictypeIdMap.keySet()){
+                delDictItemByTypeIdDm(oldDictypeIdMap.get(key));
+            }
+        }
+    }
+
+    /**
+     * 通过字典项的id删除字典项下的字典信息
+     * @param typeIdDm
+     */
+    public void delDictItemByTypeIdDm(String typeIdDm){
+        String hql = "delete from YunDictitem where typeIdDm = '"+typeIdDm+"'";
+        baseFacade.excHql(hql);
+    }
+    /**
+     * 根据字典名称和医生id获取私有字典信息
+     * @param typeName
+     * @param doctorId
+     * @return
+     */
+    public YunDicttype getYunDicttypeByName(String typeName,String doctorId){
+        String hql = " from YunDicttype where typeName = '"+typeName+"' and userId = '"+doctorId+"'";
+        List<YunDicttype> yunDicttypeList = baseFacade.createQuery(YunDicttype.class,hql,new ArrayList<Object>()).getResultList();
+        if(yunDicttypeList!=null && !yunDicttypeList.isEmpty()){
+            return yunDicttypeList.get(0);
+        }else{
+            return null;
+        }
     }
 
     /**

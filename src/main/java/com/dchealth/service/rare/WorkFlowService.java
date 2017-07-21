@@ -6,6 +6,7 @@ import com.dchealth.entity.rare.*;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.IDUtils;
 import com.dchealth.util.JSONUtil;
+import com.dchealth.util.StringUtils;
 import com.dchealth.util.UserUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -127,7 +130,6 @@ public class WorkFlowService {
         YunDisTemplet merge = baseFacade.merge(yunDisTemplet);
         return  Response.status(Response.Status.OK).entity(merge).build();
     }
-
 
     /***
      * 新建病人获取工作流数据
@@ -339,7 +341,7 @@ public class WorkFlowService {
      */
     private YunPatient mergePatient(YunPatient patient, PostPara postPara, YunUsers yunUsers) throws ParseException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        if(postPara.getBr()!=null){
+        if(!StringUtils.isEmpty(postPara.getBr())){
             Date date = simpleDateFormat.parse(postPara.getBr());
             patient.setBr(new Timestamp(date.getTime()));
         }
