@@ -207,10 +207,9 @@ public class DictService {
             }else if(oldDictypeIdMap.containsKey(yunDictitem.getTypeIdDm())){
                 yunDictitem.setTypeIdDm(oldDictypeIdMap.get(yunDictitem.getTypeIdDm()));
             }
-
             baseFacade.merge(yunDictitem);
         }
-        return Response.status(Response.Status.OK).entity(doctorId).build();
+        return Response.status(Response.Status.OK).entity(yunDicttypes).build();
     }
 
     /**

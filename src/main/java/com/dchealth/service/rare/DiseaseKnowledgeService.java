@@ -9,7 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -100,6 +102,7 @@ public class DiseaseKnowledgeService {
         String content = yunDiseaseKnowledge.getContent();
         String contentPath = getFilePath(content);
         yunDiseaseKnowledge.setPath(contentPath);
+        yunDiseaseKnowledge.setModifyDate(new Timestamp(new Date().getTime()));
         YunDiseaseKnowledge merge = baseFacade.merge(yunDiseaseKnowledge);
         return Response.status(Response.Status.OK).entity(merge).build();
     }

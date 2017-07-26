@@ -49,7 +49,7 @@ public class DataService {
         }
 
         if ("未分组".equals(zflags)){
-            hql+=" and  v.zflags is null ";
+            hql+=" and  (v.zflags is null or v.zflags = '')";
         }
 
         if(name!=null&&!"".equals(name)){
@@ -181,7 +181,7 @@ public class DataService {
     @GET
     @Path("list-value-group")
     public List<String> getDiseaseGroupName(@QueryParam("doctorId") String doctorId){
-        String hql = "select distinct y.zflags from YunValue as y where y.doctorId='"+doctorId+"'" ;
+        String hql = "select distinct (case when y.zflags is null then '' else y.zflags end) from YunValue as y where y.doctorId='"+doctorId+"'" ;
         return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList() ;
     }
 
@@ -219,14 +219,16 @@ public class DataService {
         Map<String,String> yunValueIdsMap = new HashMap<>();
         removeYunValueByDoctorId(doctorId);
         for(YunValue yunValue:yunValues){
+            yunValue.setModifyDate(new Timestamp(new Date().getTime()));
             YunValue merge = baseFacade.merge(yunValue);
             yunValueIdsMap.put(yunValue.getId(),merge.getId());
         }
         for(YunValueFormat yunValueFormat:yunValueFormats){
+            yunValueFormat.setModifyDate(new Timestamp(new Date().getTime()));
             yunValueFormat.setId(yunValueIdsMap.get(yunValueFormat.getId()));
             baseFacade.merge(yunValueFormat);
         }
-        return Response.status(Response.Status.OK).entity(doctorId).build();
+        return Response.status(Response.Status.OK).entity(yunValues).build();
     }
 
     /**
