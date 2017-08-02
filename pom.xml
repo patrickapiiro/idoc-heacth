@@ -473,13 +473,22 @@
             <version>${shiro.version}</version>
         </dependency>
 
+        <!-- SECURITY end -->
+
+        <!--短信验证码 begin-->
         <dependency>
             <groupId>com.aliyun.mns</groupId>
             <artifactId>aliyun-sdk-mns</artifactId>
             <version>1.1.8</version>
-            <classifier>jar-with-dependencies</classifier>
         </dependency>
-        <!-- SECURITY end -->
+        <!--短信验证码 end-->
+        <!--poi依赖 begin-->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.10-FINAL</version>
+        </dependency>
+        <!--poi依赖 end-->
     </dependencies>
 
 </project>
