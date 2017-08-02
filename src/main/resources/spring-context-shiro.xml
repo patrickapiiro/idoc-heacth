@@ -15,6 +15,7 @@
         <property name="securityManager" ref="securityManager"/>
         <property name="loginUrl" value="/api/login"/>
         <property name="successUrl" value="/api/login/success"/>
+        
         <property name="filters">
             <map>
                 <entry key="authc" value-ref="formAuthenticationFilter"/>
@@ -29,10 +30,14 @@
                 /css/** = anon
                 /images/** = anon
                 /js/** = anon
+                /upload/** = anon
                 /sign-up.html = anon
                 /api/yun-user/regist=anon
                 /login.html=anon
                 /api/hospital=anon
+                /api/yun-user/get-very-code = anon
+                /api/yun-user/reset-user-pwd = anon
+                /api/knowledge/find-knowledge = anon
                 /api/knowledge/list-disease-type = anon
                 /api/knowledge/list-disease-knowledge = anon
                 /api/login=authc

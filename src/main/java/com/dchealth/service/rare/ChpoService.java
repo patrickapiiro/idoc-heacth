@@ -40,14 +40,15 @@ public class ChpoService {
         if(!StringUtils.isEmpty(nameEn)){
             hql += " and nameEn = '"+nameEn+"'";
         }
-        if(!StringUtils.isEmpty(typeName)){
+        if(!StringUtils.isEmpty(nameCn)){
             hql += " and nameCn = '"+nameCn+"'";
         }
+        hql += "order by createDate desc,typeName asc";
         return baseFacade.createQuery(YunChpo.class,hql,new ArrayList<Object>()).getResultList();
     }
 
     /**
-     * 保存和修改Chpo信息
+     * 保存Chpo信息
      * @param yunChpo
      * @return
      */
@@ -55,10 +56,29 @@ public class ChpoService {
     @Transactional
     @Path("merge")
     public Response mergeYunChpo(YunChpo yunChpo){
-        YunChpo merge = baseFacade.merge(yunChpo);
+        String hql = " from YunChpo where hpoId = '"+yunChpo.getHpoId()+"'";
+        List<YunChpo> yunChpoList = baseFacade.createQuery(YunChpo.class,hql,new ArrayList<Object>()).getResultList();
+        YunChpo merge = null;
+        if(yunChpoList==null || yunChpoList.isEmpty()){
+            merge = baseFacade.merge(yunChpo);
+        }else{
+            merge = yunChpo;
+        }
         return Response.status(Response.Status.OK).entity(merge).build();
     }
 
+    /**
+     * 更新chpo信息
+     * @param yunChpo
+     * @return
+     */
+    @POST
+    @Transactional
+    @Path("modify")
+    public Response modifyYunChpo(YunChpo yunChpo){
+        YunChpo merge = baseFacade.merge(yunChpo);
+        return Response.status(Response.Status.OK).entity(merge).build();
+    }
     /**
      * 根据id删除chpo信息
      * @param id

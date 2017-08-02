@@ -11,6 +11,8 @@ import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.PasswordAndSalt;
 import com.dchealth.security.SystemPasswordService;
+import com.dchealth.util.SmsSendUtil;
+import com.dchealth.util.StringUtils;
 import com.dchealth.util.UserUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.TypedQuery;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -30,9 +34,10 @@ import java.util.Properties;
 /**
  * Created by Administrator on 2017/6/6.
  */
-@Controller
+
 @Produces("application/json")
 @Path("yun-user")
+@Controller
 public class YunUserService {
 
     @Autowired
@@ -304,4 +309,69 @@ public class YunUserService {
         return userFacade.getYunUserById(id);
     }
 
+    /**
+     * 手机短信验证码 获取
+     * @param loginName 登录用户名
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-very-code")
+    public List getVeryCode(@QueryParam("loginName") String loginName,@Context HttpServletRequest request) throws Exception{
+        List<String> list = new ArrayList<>();
+        YunUsers yunUsers = userFacade.getYunUsersByLoginName(loginName);
+        if(yunUsers.getMobile()==null || "".equals(yunUsers.getMobile())){
+            throw new Exception("用户未绑定手机号，请修改个人信息进行手机号码绑定");
+        }
+        if(!SmsSendUtil.isMobile(yunUsers.getMobile())){
+            throw new Exception("用户手机号不正确，请修改手机号");
+        }
+        String veryCode = SmsSendUtil.sendVeryCode(yunUsers.getMobile());
+        list.add(loginName);
+        if(request!=null){
+            request.getSession().setAttribute(request.getSession().getId(),veryCode);
+        }
+        return list;
+    }
+
+    /**
+     * 忘记密码 设置新密码
+     * @param userName
+     * @param veryCode
+     * @param newPassword
+     * @param confirmPassword
+     * @param request
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("reset-user-pwd")
+    @Transactional
+    public Response resetUserPassWord(@QueryParam("loginName") String userName,@QueryParam("veryCode") String veryCode,
+                                       @QueryParam("newPassword") String newPassword, @QueryParam("confirmPassword") String confirmPassword,
+                                       @Context HttpServletRequest request) throws Exception {
+        YunUsers yunUsers = userFacade.getYunUsersByLoginName(userName);
+        if(StringUtils.isEmpty(veryCode)){
+            throw new Exception("请输入验证码");
+        }
+        String sessionVeryCode = (String)request.getSession().getAttribute(request.getSession().getId());
+        if(!veryCode.equals(sessionVeryCode)){
+            throw new Exception("验证码不正确，请重新输入");
+        }
+        if(StringUtils.isEmpty(newPassword)){
+            throw new Exception("输入密码不能为空");
+        }
+        if(StringUtils.isEmpty(confirmPassword)){
+            throw new Exception("确认密码不能为空");
+        }
+        if(!newPassword.equals(confirmPassword)){
+            throw new Exception("输入密码和确认密码不一致，请重新输入");
+        }
+        PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), confirmPassword);
+        yunUsers.setPassword(passwordAndSalt.getPassword());
+        yunUsers.setSalt(passwordAndSalt.getSalt());
+        Subject subject = SecurityUtils.getSubject();
+        subject.logout();
+        return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
+    }
 }
