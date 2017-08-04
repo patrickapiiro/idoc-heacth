@@ -32,8 +32,12 @@ public class ChpoService {
      */
     @GET
     @Path("get-chpo-list")
-    public List<YunChpo> getYunChpoList(@QueryParam("typeName") String typeName,@QueryParam("nameEn") String nameEn,@QueryParam("nameCn") String nameCn){
-        String hql = " from YunChpo where 1=1 ";
+    public List<YunChpo> getYunChpoList(@QueryParam("typeName") String typeName,@QueryParam("nameEn") String nameEn,@QueryParam("nameCn") String nameCn,
+                                         @QueryParam("patientId") String patientId){
+        String hql = " from YunChpo where 1=1";
+        if(!StringUtils.isEmpty(patientId)){
+            hql += " and patientId = '"+patientId+"'";
+        }
         if(!StringUtils.isEmpty(typeName)){
             hql += " and typeName = '"+typeName+"'";
         }
@@ -55,8 +59,12 @@ public class ChpoService {
     @POST
     @Transactional
     @Path("merge")
-    public Response mergeYunChpo(YunChpo yunChpo){
-        String hql = " from YunChpo where hpoId = '"+yunChpo.getHpoId()+"'";
+    public Response mergeYunChpo(YunChpo yunChpo) throws Exception{
+        if(StringUtils.isEmpty(yunChpo.getPatientId())){
+            throw new Exception("病人信息不能为空");
+        }
+        String hql = " from YunChpo where hpoId = '"+yunChpo.getHpoId()+"' and patientId = '"+yunChpo.getPatientId()+"'" +
+                     " and typeName = '"+yunChpo.getTypeName()+"'";
         List<YunChpo> yunChpoList = baseFacade.createQuery(YunChpo.class,hql,new ArrayList<Object>()).getResultList();
         YunChpo merge = null;
         if(yunChpoList==null || yunChpoList.isEmpty()){
@@ -75,7 +83,13 @@ public class ChpoService {
     @POST
     @Transactional
     @Path("modify")
-    public Response modifyYunChpo(YunChpo yunChpo){
+    public Response modifyYunChpo(YunChpo yunChpo) throws Exception{
+        String hql = " from YunChpo where hpoId = '"+yunChpo.getHpoId()+"' and patientId = '"+yunChpo.getPatientId()+"'" +
+                " and typeName = '"+yunChpo.getTypeName()+"' and id <> '"+yunChpo.getId()+"'";
+        List<YunChpo> yunChpoList = baseFacade.createQuery(YunChpo.class,hql,new ArrayList<Object>()).getResultList();
+        if(yunChpoList!=null && !yunChpoList.isEmpty()){
+            throw new Exception("该分类下已存在该chpo信息");
+        }
         YunChpo merge = baseFacade.merge(yunChpo);
         return Response.status(Response.Status.OK).entity(merge).build();
     }

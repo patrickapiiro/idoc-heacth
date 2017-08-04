@@ -13,6 +13,7 @@ import java.util.Date;
 @Table(name = "yun_chpo", schema = "emhbase", catalog = "")
 public class YunChpo {
     private String id;
+    private String patientId;
     private String definitionEn;
     private String definitionCn;
     private String hpoId;
@@ -34,6 +35,16 @@ public class YunChpo {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    @Basic
+    @Column(name = "patient_id")
+    public String getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(String patientId) {
+        this.patientId = patientId;
     }
 
     @Basic
@@ -152,6 +163,7 @@ public class YunChpo {
         YunChpo yunChpo = (YunChpo) o;
 
         if (id != null ? !id.equals(yunChpo.id) : yunChpo.id != null) return false;
+        if (patientId != null ? !patientId.equals(yunChpo.patientId) : yunChpo.patientId != null) return false;
         if (definitionEn != null ? !definitionEn.equals(yunChpo.definitionEn) : yunChpo.definitionEn != null)
             return false;
         if (definitionCn != null ? !definitionCn.equals(yunChpo.definitionCn) : yunChpo.definitionCn != null)
@@ -171,6 +183,7 @@ public class YunChpo {
     @Override
     public int hashCode() {
         int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (patientId != null ? patientId.hashCode() : 0);
         result = 31 * result + (definitionEn != null ? definitionEn.hashCode() : 0);
         result = 31 * result + (definitionCn != null ? definitionCn.hashCode() : 0);
         result = 31 * result + (hpoId != null ? hpoId.hashCode() : 0);
