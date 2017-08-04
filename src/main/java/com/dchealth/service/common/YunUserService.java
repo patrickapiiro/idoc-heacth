@@ -60,13 +60,13 @@ public class YunUserService {
             if(!veryCode.equals(sessionVeryCode)){
                 throw new Exception("验证码不正确，请重新输入");
             }
-            request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.register);
         }
         long id = new Date().getTime();
         yunUsers.setId(String.valueOf(id));
         PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
         yunUsers.setPassword(passwordAndSalt.getPassword());
         yunUsers.setSalt(passwordAndSalt.getSalt());
+        request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.register);
         return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
     }
 

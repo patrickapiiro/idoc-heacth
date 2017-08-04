@@ -13,7 +13,7 @@ import java.util.Date;
 @Table(name = "yun_disease_list", schema = "emhbase", catalog = "")
 public class YunDiseaseList {
     private String id;
-    private Long doctorId;
+    private String doctorId;
     private String name;
     private String dcode;
     private String bw;
@@ -37,11 +37,11 @@ public class YunDiseaseList {
 
     @Basic
     @Column(name = "doctor_id")
-    public Long getDoctorId() {
+    public String getDoctorId() {
         return doctorId;
     }
 
-    public void setDoctorId(Long doctorId) {
+    public void setDoctorId(String doctorId) {
         this.doctorId = doctorId;
     }
 
