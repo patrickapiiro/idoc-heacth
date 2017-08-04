@@ -51,8 +51,17 @@ public class YunUserService {
     @Path("regist")
     @POST
     @Transactional
-    public Response registYunUser(YunUsers yunUsers){
-
+    public Response registYunUser(@QueryParam("veryCode") String veryCode, YunUsers yunUsers,@Context HttpServletRequest request) throws Exception{
+        if("true".equals(SmsSendUtil.getStringByKey("openVeryCode"))){
+            if(StringUtils.isEmpty(veryCode)){
+                throw new Exception("验证码不能为空，请重新输入");
+            }
+            String sessionVeryCode = request==null?"":(String) request.getSession().getAttribute(request.getSession().getId()+SmsSendUtil.register);
+            if(!veryCode.equals(sessionVeryCode)){
+                throw new Exception("验证码不正确，请重新输入");
+            }
+            request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.register);
+        }
         long id = new Date().getTime();
         yunUsers.setId(String.valueOf(id));
         PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
@@ -326,7 +335,7 @@ public class YunUserService {
         if(!SmsSendUtil.isMobile(yunUsers.getMobile())){
             throw new Exception("用户手机号不正确，请修改手机号");
         }
-        String veryCode = SmsSendUtil.sendVeryCode(yunUsers.getMobile());
+        String veryCode = SmsSendUtil.getInstance().execSendCode(yunUsers.getMobile());
         list.add(loginName);
         if(request!=null){
             request.getSession().setAttribute(request.getSession().getId(),veryCode);
@@ -372,6 +381,32 @@ public class YunUserService {
         yunUsers.setSalt(passwordAndSalt.getSalt());
         Subject subject = SecurityUtils.getSubject();
         subject.logout();
+        request.getSession().removeAttribute(request.getSession().getId());
         return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
+    }
+
+    /**
+     *通过手机号获取验证码
+     * @param mobile 手机号
+     * @param request
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-very-code-by-mobile")
+    public List<String> getVeryCodeByPhone(@QueryParam("mobile") String mobile,@Context HttpServletRequest request) throws Exception{
+        List<String> list = new ArrayList<>();
+        if(StringUtils.isEmpty(mobile)){
+            throw new Exception("手机号不能为空");
+        }
+        if(!SmsSendUtil.isMobile(mobile)){
+            throw new Exception("用户手机号不正确，请重新输入");
+        }
+        String veryCode = SmsSendUtil.getInstance().execSendCode(mobile);
+        list.add(mobile);
+        if(request!=null){
+            request.getSession().setAttribute(request.getSession().getId()+SmsSendUtil.register,veryCode);
+        }
+        return list;
     }
 }

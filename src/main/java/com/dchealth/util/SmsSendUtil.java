@@ -11,33 +11,67 @@ import com.aliyun.mns.model.TopicMessage;
 
 import java.util.Properties;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 /**
  * Created by Administrator on 2017/7/25.
  */
 public class SmsSendUtil {
+    private static SmsSendUtil instance = null;
     private static ResourceLoader loader = ResourceLoader.getInstance();
     private static final String DEFAULT_CONFIG_FILE = "dchealth.properties";
     private static Properties prop = null;
     private static ConcurrentMap<String, String> paramMap = new ConcurrentHashMap<String, String>();
     private String  secretKey = "bjjmyrj1bjjmyrj2";
+    public static final String register = "register";
+    private ExecutorService service;
+
+    private SmsSendUtil(){
+        this.service = Executors.newFixedThreadPool(15);
+//        this.service = new ThreadPoolExecutor(5, 10, 3,
+//                TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(3),new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+    public static SmsSendUtil getInstance(){
+        if(instance==null){
+            synchronized (SmsSendUtil.class){
+                if(instance==null){
+                    instance = new SmsSendUtil();
+                }
+            }
+        }
+        return instance;
+    }
+    class sendCodeHandler implements Runnable{
+        private String mobile;
+        private String veryCode;
+        public sendCodeHandler(String mobile,String veryCode){
+            this.mobile = mobile;
+            this.veryCode = veryCode;
+        }
+        @Override
+        public void run() {
+            sendVeryCode(mobile,veryCode);
+        }
+    }
+    public String execSendCode(String mobile) {
+        Integer veryCodeNum = getStringByKey("veryCodeNum")==null?6:Integer.valueOf(getStringByKey("veryCodeNum"));
+        String veryCode = getRandNum(veryCodeNum);
+        this.service.submit(new sendCodeHandler(mobile,veryCode));
+        return veryCode;
+    }
     /**
      * 正则表达式：验证手机号
      */
     public static final String REGEX_MOBILE = "^((17[0-9])|(14[0-9])|(13[0-9])|(15[^4,\\D])|(18[0,5-9]))\\d{8}$";
 
-    public static String sendVeryCode(String phone){
-        String res = "";
+    private static void sendVeryCode(String phone,String veryCode){
         String accessKeyId = getStringByKey("accessKeyId");
         String accessKeySecret = getStringByKey("accessKeySecret");
         String mnsEndpoint = getStringByKey("mnsEndpoint");
         String topicName = getStringByKey("topic");
         String signName = getStringByKey("signName");
         String templateCode = getStringByKey("templateCode");
-        Integer veryCodeNum = getStringByKey("veryCodeNum")==null?6:Integer.valueOf(getStringByKey("veryCodeNum"));
         CloudAccount account = new CloudAccount(accessKeyId, accessKeySecret, mnsEndpoint);
         MNSClient client = account.getMNSClient();
         CloudTopic topic = client.getTopicRef(topicName);
@@ -53,8 +87,7 @@ public class SmsSendUtil {
         batchSmsAttributes.setTemplateCode(templateCode);
         // 3.3 设置发送短信所使用的模板中参数对应的值（在短信模板中定义的，没有可以不用设置）
         BatchSmsAttributes.SmsReceiverParams smsReceiverParams = new BatchSmsAttributes.SmsReceiverParams();
-        res = getRandNum(veryCodeNum);
-        smsReceiverParams.setParam("no",res);
+        smsReceiverParams.setParam("no",veryCode);
         // 3.4 增加接收短信的号码
         batchSmsAttributes.addSmsReceiver(phone, smsReceiverParams);
         messageAttributes.setBatchSmsAttributes(batchSmsAttributes);
@@ -73,7 +106,6 @@ public class SmsSendUtil {
             e.printStackTrace();
         }
         client.close();
-        return res;
     }
 
     /**
@@ -116,7 +148,7 @@ public class SmsSendUtil {
     /**
      * 校验手机号
      *
-     * @param mobile 手机号
+     * @param mobile
      * @return 校验通过返回true，否则返回false
      */
     public static boolean isMobile(String mobile) {
@@ -124,7 +156,6 @@ public class SmsSendUtil {
     }
 
     public static void main(String args[]){
-        sendVeryCode("18710026153");
-
+        getInstance().execSendCode("18710026153");
     }
 }
