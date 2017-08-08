@@ -16,6 +16,7 @@ import com.dchealth.util.StringUtils;
 import com.dchealth.util.UserUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
+import org.mortbay.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,9 @@ public class YunUserService {
                 throw new Exception("验证码不能为空，请重新输入");
             }
             String sessionVeryCode = request==null?"":(String) request.getSession().getAttribute(request.getSession().getId()+SmsSendUtil.register);
+            if(StringUtils.isEmpty(sessionVeryCode)){
+                throw new Exception("验证码已失效，请重新获取");
+            }
             if(!veryCode.equals(sessionVeryCode)){
                 throw new Exception("验证码不正确，请重新输入");
             }
@@ -364,6 +368,9 @@ public class YunUserService {
             throw new Exception("请输入验证码");
         }
         String sessionVeryCode = (String)request.getSession().getAttribute(request.getSession().getId());
+        if(StringUtils.isEmpty(sessionVeryCode)){
+            throw new Exception("验证码已失效，请重新获取");
+        }
         if(!veryCode.equals(sessionVeryCode)){
             throw new Exception("验证码不正确，请重新输入");
         }

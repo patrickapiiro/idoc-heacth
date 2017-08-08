@@ -279,7 +279,11 @@ public class TemplateService {
 
         List<YunValueFormat> resultList = baseFacade.createQuery(YunValueFormat.class, hql, new ArrayList<Object>()).getResultList();
         if(resultList.size()<1){
-            throw new Exception("获取名称为【"+value+"】的元数据格式失败！");
+            String hql2 = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  v.name like '"+value+"%'";
+            resultList = baseFacade.createQuery(YunValueFormat.class, hql2, new ArrayList<Object>()).getResultList();
+            if(resultList.isEmpty()){
+                throw new Exception("获取名称为【"+value+"】的元数据格式失败！");
+            }
         }
         YunValueFormat yunValueFormat = resultList.get(0);
         YunValue yunValue =baseFacade.get(YunValue.class,yunValueFormat.getId());

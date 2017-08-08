@@ -4,6 +4,7 @@ import com.dchealth.VO.YunDictTypeAndItemVo;
 import com.dchealth.entity.common.YunDictitem;
 import com.dchealth.entity.common.YunDicttype;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
@@ -100,6 +101,11 @@ public class DictService {
     @Transactional
     @Path("add-new-items")
     public Response addDictItmes(List<YunDictitem> yunDictitems) {
+        String typeIdDm = yunDictitems==null?"":(yunDictitems.isEmpty()?"":yunDictitems.get(0).getTypeIdDm());
+        if(!StringUtils.isEmpty(typeIdDm)){
+            String hql = " delete from YunDictitem where typeIdDm = '"+typeIdDm+"'";
+            baseFacade.excHql(hql);
+        }
         for (YunDictitem item : yunDictitems) {
             baseFacade.merge(item);
         }

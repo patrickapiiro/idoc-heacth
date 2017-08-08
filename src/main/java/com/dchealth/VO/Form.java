@@ -8,9 +8,10 @@ import java.util.List;
  */
 public class Form {
     private List<FormData> form_data = new ArrayList<>() ;
-    private  String form_dom  ;
-    private Object form_config ;
-    private FormPage form_template ;
+    private  String form_dom;
+    private Object form_config;
+    private FormPage form_template;
+    private Object test_data;
 
 
     public List<FormData> getForm_data() {
@@ -43,5 +44,13 @@ public class Form {
 
     public void setForm_template(FormPage form_template) {
         this.form_template = form_template;
+    }
+
+    public Object getTest_data() {
+        return test_data;
+    }
+
+    public void setTest_data(Object test_data) {
+        this.test_data = test_data;
     }
 }
