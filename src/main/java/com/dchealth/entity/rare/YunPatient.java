@@ -30,6 +30,7 @@ public class YunPatient {
     private Timestamp modifyDate;
     private String extkey;
     private String bz;
+    private String status;//病人状态 0：已故,1:健在
 
     @Id
     @Column(name = "id")
@@ -221,6 +222,20 @@ public class YunPatient {
         this.bz = bz;
     }
 
+    @Basic
+    @Column(name = "status")
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        if(status==null||"".equals(status)){
+            this.status = "1";
+        }else{
+            this.status = status;
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -246,6 +261,7 @@ public class YunPatient {
         if (modifyDate != null ? !modifyDate.equals(that.modifyDate) : that.modifyDate != null) return false;
         if (extkey != null ? !extkey.equals(that.extkey) : that.extkey != null) return false;
         if (bz != null ? !bz.equals(that.bz) : that.bz != null) return false;
+        if (status != null ? !status.equals(that.status) : that.status != null) return false;
 
         return true;
     }
@@ -270,6 +286,7 @@ public class YunPatient {
         result = 31 * result + (modifyDate != null ? modifyDate.hashCode() : 0);
         result = 31 * result + (extkey != null ? extkey.hashCode() : 0);
         result = 31 * result + (bz != null ? bz.hashCode() : 0);
+        result = 31 * result + (status != null ? status.hashCode() : 0);
         return result;
     }
 }

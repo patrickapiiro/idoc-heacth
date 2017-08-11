@@ -101,16 +101,63 @@ public class DiseaseService {
         String hql="select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
                     " and yud.userId='"+doctorId+"'" ;
         List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class, hql, new ArrayList<Object>()).getResultList();
+        Map<String,Long>  discussPatMap = getPatNumberByType(doctorId,"0");//
+        Map<String,Long>  managePatMap = getPatNumberByType(doctorId,"1");//
+        discussPatMap.putAll(managePatMap);
+
+        Map<String,Long>  discussfollowMap = getFollowNumberByType(doctorId,"0");//
+        Map<String,Long>  managefollowMap = getFollowNumberByType(doctorId,"1");//
+        discussfollowMap.putAll(managefollowMap);
         for(YunDiseaseList list:yunDiseaseLists){
             DiseasePatInfo diseasePatInfo = new DiseasePatInfo(list,Long.parseLong("0"),Long.parseLong("0"));
-            Long patNumber = getPatNumber(doctorId, list.getDcode(),diseaseSet);
-            diseasePatInfo.setPatNumber(patNumber);
-            diseasePatInfo.setFollowNumber(getPatFollowUp(doctorId,list.getDcode(),diseaseSet));
+            //Long patNumber = getPatNumber(doctorId, list.getDcode(),diseaseSet);
+            diseasePatInfo.setPatNumber(discussPatMap.get(list.getDcode()));
+            diseasePatInfo.setFollowNumber(discussfollowMap.get(list.getDcode()));//getPatFollowUp(doctorId,list.getDcode(),diseaseSet)
             diseasePatInfos.add(diseasePatInfo);
         }
         return diseasePatInfos;
     }
 
+    public Map<String,Long> getPatNumberByType(String doctorId,String type){
+        Map<String,Long> retMap = new HashMap<String,Long>();
+        String hql = "select count(*) as ct,yf.diagnosis_code from yun_folder as yf ,yun_patient as yp where yf.patient_id=yp.id";
+        if("0".equals(type)){//
+            hql += " and yp.doctor_id = '"+doctorId+"'";
+        }else if("1".equals(type)){
+            hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = yf.diagnosis_code and ym.user_id = '"+doctorId+"')";
+        }
+        hql +=" group by yf.diagnosis_code";
+        List list = baseFacade.createNativeQuery(hql).getResultList();
+        if(list!=null && !list.isEmpty()){
+            int size = list.size();
+            for(int i=0;i<size;i++){
+                Object[] params = (Object[])list.get(i);
+                retMap.put(params[1]+"",Long.parseLong(params[0].toString()));
+            }
+        }
+        return retMap;
+    }
+
+    public Map<String,Long> getFollowNumberByType(String doctorId,String type){
+        Map<String,Long> retMap = new HashMap<String,Long>();
+        String hql = "select count(*) CT,F.DCODE from yun_follow_up as f,yun_patient as p  where YEAR(f.follow_date)=YEAR(current_date()) " +
+                     "and MONTH(f.follow_date)=MONTH(current_date()) and f.hstatus='R' and f.patient_id=p.id ";
+        if("0".equals(type)){//
+            hql += " and p.doctor_id = '"+doctorId+"'";
+        }else if("1".equals(type)){
+            hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = F.dcode and ym.user_id = '"+doctorId+"')";
+        }
+        hql +=" GROUP BY F.dcode";
+        List list = baseFacade.createNativeQuery(hql).getResultList();
+        if(list!=null && !list.isEmpty()){
+            int size = list.size();
+            for(int i=0;i<size;i++){
+                Object[] params = (Object[])list.get(i);
+                retMap.put(params[1]+"",Long.parseLong(params[0].toString()));
+            }
+        }
+        return retMap;
+    }
     /**
      * 获取某个疾病当月的随访数
      * @param doctorId

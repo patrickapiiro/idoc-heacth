@@ -40,6 +40,9 @@ public class DiseaseCountService {
        String  diseasHql = "select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
                     "and yud.userId='"+doctorId+"'" ;
        List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class,diseasHql,new ArrayList<Object>()).getResultList();
+        Map<String,Long>  discussMap = getPatNumberByType(doctorId,"0");//
+        Map<String,Long>  manageMap = getPatNumberByType(doctorId,"1");//
+        discussMap.putAll(manageMap);
        for(YunDiseaseList yunDiseaseList:yunDiseaseLists){
             DiseaseStatisVo diseaseStatisVo = new DiseaseStatisVo();
             String dcode = yunDiseaseList.getDcode();
@@ -49,7 +52,8 @@ public class DiseaseCountService {
             for(String queryDate:dateList){
                 DcodeCountInfo dcodeCountInfo = new DcodeCountInfo();
                 dcodeCountInfo.setDate(queryDate);
-                dcodeCountInfo.setTotal(getDiseasCount(queryDate,dcode,doctorId,diseaseSet));
+                Long total = discussMap.get(queryDate+dcode)==null?0L:discussMap.get(queryDate+dcode);
+                dcodeCountInfo.setTotal(total);//getDiseasCount(queryDate,dcode,doctorId,diseaseSet)
                 dcodeCountInfos.add(dcodeCountInfo);
             }
             diseaseStatisVo.setDcodeCountInfos(dcodeCountInfos);
@@ -58,6 +62,26 @@ public class DiseaseCountService {
         return Response.status(Response.Status.OK).entity(diseaseStatisVos).build();
     }
 
+    public Map<String,Long> getPatNumberByType(String doctorId,String type){
+        Map<String,Long> retMap = new HashMap<String,Long>();
+        String sql ="SELECT count(*) CT,f.diagnosis_code,DATE_FORMAT(f.create_date,'%Y-%m') from yun_patient p,yun_folder f where p.id = f.patient_id ";
+        if("0".equals(type)){
+            sql +=" and p.doctor_id = '"+doctorId+"' ";
+        }else if("1".equals(type)){
+            sql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = f.diagnosis_code and ym.user_id = '"+doctorId+"')";
+        }
+        sql += " and f.create_date BETWEEN date_sub(date_sub(date_format(now(),'%y-%m-%d 00:00:00'),interval extract( day from now())-1 day),interval 5 month) and NOW() " +
+                " GROUP BY f.diagnosis_code,DATE_FORMAT(f.create_date,'%Y-%m')";
+        List list = baseFacade.createNativeQuery(sql).getResultList();
+        if(list!=null && !list.isEmpty()){
+            int size = list.size();
+            for(int i=0;i<size;i++){
+                Object[] params = (Object[])list.get(i);
+                retMap.put(params[2]+""+params[1]+"",Long.parseLong(params[0].toString()));
+            }
+        }
+        return retMap;
+    }
     public Set getManageDisease(String doctorId){
         Set<String> set = new HashSet<>();
         String hql = "select ydl from YunUserDiseaseManager yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
@@ -114,7 +138,12 @@ public class DiseaseCountService {
             ca.add(Calendar.MONTH,-i);
             int year = ca.get(Calendar.YEAR);
             int month = ca.get(Calendar.MONTH)+1;
-            String dateStr = year+"-"+month;
+            String dateStr = "";
+            if(month<10){
+                dateStr = year+"-"+"0"+month;
+            }else{
+                dateStr = year+"-"+month;
+            }
             dateList.add(dateStr);
         }
         return dateList;

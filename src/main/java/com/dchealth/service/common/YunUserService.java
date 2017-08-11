@@ -301,6 +301,7 @@ public class YunUserService {
         YunUsers yunUserById = userFacade.getYunUserById(userId);
         List<RoleVsUser> roleVsUsers = new ArrayList<>() ;
         String hql = "delete from RoleVsUser as r where r.userId='"+userId+"'" ;
+        userFacade.excHql(hql);
         for(RoleDict roleDict:roleDicts){
             RoleVsUser roleVsUser = new RoleVsUser();
             roleVsUser.setUserId(userId);
@@ -339,7 +340,7 @@ public class YunUserService {
         if(!SmsSendUtil.isMobile(yunUsers.getMobile())){
             throw new Exception("用户手机号不正确，请修改手机号");
         }
-        String veryCode = SmsSendUtil.getInstance().execSendCode(yunUsers.getMobile());
+        String veryCode = SmsSendUtil.getInstance().execSendCode(yunUsers.getMobile(),"reset");
         list.add(loginName);
         if(request!=null){
             request.getSession().setAttribute(request.getSession().getId(),veryCode);
@@ -409,11 +410,36 @@ public class YunUserService {
         if(!SmsSendUtil.isMobile(mobile)){
             throw new Exception("用户手机号不正确，请重新输入");
         }
-        String veryCode = SmsSendUtil.getInstance().execSendCode(mobile);
+        String veryCode = SmsSendUtil.getInstance().execSendCode(mobile,SmsSendUtil.register);
         list.add(mobile);
         if(request!=null){
             request.getSession().setAttribute(request.getSession().getId()+SmsSendUtil.register,veryCode);
         }
         return list;
     }
+    /**
+     *  获取删除病人手机短信验证码
+     * @param loginName 登录用户名
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-del-pat-very-code")
+    public List getDelPatientVeryCode(@QueryParam("loginName") String loginName,@Context HttpServletRequest request) throws Exception{
+        List<String> list = new ArrayList<>();
+        YunUsers yunUsers = userFacade.getYunUsersByLoginName(loginName);
+        if(yunUsers.getMobile()==null || "".equals(yunUsers.getMobile())){
+            throw new Exception("用户未绑定手机号，请修改个人信息进行手机号码绑定");
+        }
+        if(!SmsSendUtil.isMobile(yunUsers.getMobile())){
+            throw new Exception("用户手机号不正确，请修改手机号");
+        }
+        String veryCode = SmsSendUtil.getInstance().execSendCode(yunUsers.getMobile(),"delPatient");
+        list.add(loginName);
+        if(request!=null){
+            request.getSession().setAttribute(request.getSession().getId()+SmsSendUtil.delPationt,veryCode);
+        }
+        return list;
+    }
+
 }

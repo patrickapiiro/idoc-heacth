@@ -90,7 +90,12 @@ public class DataService {
     @POST
     @Path("merge-value")
     @Transactional
-    public Response addYunValue(YunValue yunValue){
+    public Response addYunValue(YunValue yunValue) throws Exception{
+        String hql = " from YunValue where name = '"+yunValue.getName()+" and id <>'"+yunValue.getId()+"'";
+        List<YunValue> yunValueList = baseFacade.createQuery(YunValue.class,hql,new ArrayList<Object>()).getResultList();
+        if(yunValueList!=null && !yunValueList.isEmpty()){
+            throw new Exception("元数据名称已存在，请重新修改");
+        }
         return Response.status(Response.Status.OK).entity(baseFacade.merge(yunValue)).build();
     }
 
