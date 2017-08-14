@@ -10,13 +10,17 @@ import com.dchealth.entity.rare.YunFolder;
 import com.dchealth.entity.rare.YunFollowUp;
 import com.dchealth.entity.rare.YunPatient;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.util.SmsSendUtil;
+import com.dchealth.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import sun.applet.Main;
 
 import javax.persistence.TypedQuery;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.util.*;
 
@@ -159,7 +163,17 @@ public class PatientService {
     @POST
     @Path("del-patient")
     @Transactional
-    public Response delPatientInfo(@QueryParam("id") String id){
+    public Response delPatientInfo(@QueryParam("id") String id,@QueryParam("veryCode") String veryCode, @Context HttpServletRequest request) throws Exception{
+        if(StringUtils.isEmpty(veryCode)){
+            throw new Exception("验证码不能为空，请重新输入");
+        }
+        String sessionVeryCode = request==null?"":(String) request.getSession().getAttribute(request.getSession().getId()+ SmsSendUtil.delPationt);
+        if(StringUtils.isEmpty(sessionVeryCode)){
+            throw new Exception("验证码已失效，请重新输入");
+        }
+        if(!veryCode.equals(sessionVeryCode)){
+            throw new Exception("验证码不正确，请重新输入");
+        }
         List<String> ids = new ArrayList<>();
         List<String> yunflupIds = new ArrayList<>();
         List<String> yunFolderIds = new ArrayList<>();
@@ -177,6 +191,26 @@ public class PatientService {
         baseFacade.removeByStringIds(YunFollowUp.class,yunflupIds);
         baseFacade.removeByStringIds(YunFolder.class,yunFolderIds);
         baseFacade.removeByStringIds(YunPatient.class,ids);
+        request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.delPationt);
         return Response.status(Response.Status.OK).entity(ids).build();
+    }
+
+    /**
+     * 根据病人id设置病人状态
+     * @param patientId
+     * @param status 0:代表已故,1:代表健在,后续有其他值再次添加
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Transactional
+    @Path("set-pat-status")
+    public Response setPatientStatus(@QueryParam("patientId") String patientId,@QueryParam("status") String status) throws Exception{
+        YunPatient yunPatient = baseFacade.get(YunPatient.class,patientId);
+        if(yunPatient==null){
+            throw new Exception("病人信息不存在");
+        }
+        yunPatient.setStatus(status);
+        return Response.status(Response.Status.OK).entity(baseFacade.merge(yunPatient)).build();
     }
 }

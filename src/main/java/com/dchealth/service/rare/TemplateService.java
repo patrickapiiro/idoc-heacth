@@ -9,6 +9,7 @@ import com.dchealth.entity.rare.YunValue;
 import com.dchealth.entity.rare.YunValueFormat;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.JSONUtil;
+import com.dchealth.util.StringUtils;
 import com.dchealth.util.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -74,10 +75,10 @@ public class TemplateService {
             if(doctorId==null||"".equals(doctorId)){
                 throw  new Exception("缺少doctorId，用户标识");
             }
-            if(deptId==null||"".equals(deptId)){
-                throw  new Exception("缺少deptId，科室标识");
-            }
-            hql+=" and( t.doctorId='"+doctorId+"' or (t.deptId='"+deptId+"' and t.deptId <>'0'))" ;
+//            if(deptId==null||"".equals(deptId)){
+//                throw  new Exception("缺少deptId，科室标识");
+//            }
+            hql+=" and t.doctorId='"+doctorId+"' " ;//or (t.deptId='"+deptId+"' and t.deptId <>'0') 只能看自己的，同一科室的也看不到
         }
 
         List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hql, new ArrayList<Object>()).getResultList();
@@ -275,6 +276,7 @@ public class TemplateService {
 //        String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  v.name='"+value+"" +
 //                "' and ((v.doctorId='0' and v.deptId='0') or (v.doctorId='"+id+"' and v.deptId='"+deptId+"')" +
 //                " or (v.doctorId='"+id+"' and v.deptId='0'))" ;
+        value = StringUtils.replaceBank(value);//元数据格式横杆线改成下划线即 '-'改为'_'
         String hql = "select t from YunValueFormat t,YunValue as v  where t.id=v.id and  v.name='"+value+"'";
 
         List<YunValueFormat> resultList = baseFacade.createQuery(YunValueFormat.class, hql, new ArrayList<Object>()).getResultList();
@@ -314,7 +316,7 @@ public class TemplateService {
         extend.setTemplet(dataElement.getTemplet());
         elementRow.setExtend(extend);
         elementRow.setType(dataElement.getPart());
-        elementRow.setName(value);
+        elementRow.setName(StringUtils.replaceBank(value));//原先为带有'-'改为'_'
         String dict = yunValueFormat.getDict();
 
         if(dict!=null&&!"".equals(dict)){
@@ -340,7 +342,7 @@ public class TemplateService {
             for(YunDictitem yunDictitem:resultList1){
                 RowItem rowItem = new RowItem();
                 rowItem.setInputcode(yunDictitem.getInputCode());
-                rowItem.setName(value);
+                rowItem.setName(StringUtils.replaceBank(value));//value 是否修改
                 rowItem.setText(yunDictitem.getItemName());
                 rowItem.setValue(yunDictitem.getItemCode());
                 elementRow.getItems().add(rowItem);

@@ -191,4 +191,17 @@ public class StringUtils {
         }
         return isEmpty;
     }
+
+    /**
+     * 将带有-的字符转换为_，防止angula页面报错
+     * @param input
+     * @return
+     */
+    public static  String replaceBank(String input){
+        if(isEmpty(input)){
+            return input;
+        }
+        input = input.replace("-","_");
+        return input;
+    }
 }
