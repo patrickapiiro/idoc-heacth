@@ -3,8 +3,10 @@ package com.dchealth.service.common;
 import com.dchealth.VO.YunDictTypeAndItemVo;
 import com.dchealth.entity.common.YunDictitem;
 import com.dchealth.entity.common.YunDicttype;
+import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.StringUtils;
+import com.dchealth.util.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
@@ -39,12 +41,14 @@ public class DictService {
     @GET
     @Path("list-type-by-name")
     public List<YunDicttype> listDictType(@QueryParam("typeName") String typeName,@QueryParam("userId")String userId) {
+        YunUsers yunUsers = baseFacade.get(YunUsers.class,userId);
         String hql = "from YunDicttype where 1=1 ";
         if (typeName != null && !"".equals(typeName)) {
             hql += " and typeName like '%" + typeName + "%'";
         }
         if (userId != null && !"".equals(userId)) {
-            hql += " and userId = '" + userId + "'";
+            hql += " and (userId='"+userId+"' or (deptId='"+yunUsers.getDeptId()+"' and deptId<>'0'))" +
+                    " or userId = '0'";
         }
         return baseFacade.createQuery(YunDicttype.class, hql, new ArrayList<Object>()).getResultList();
 }
@@ -262,24 +266,44 @@ public class DictService {
      */
     @GET
     @Path("list-item-by-name")
-    public List<YunDictitem> getYunDictitemsByTypeName(@QueryParam("name") String name,@QueryParam("pubFlag") String pubFlag){
+    public List<YunDictitem> getYunDictitemsByTypeName(@QueryParam("name") String name,@QueryParam("pubFlag") String pubFlag) throws Exception{
+        YunUsers yunUsers = UserUtils.getYunUsers();
         String hql = "select type.typeId from YunDicttype as type where 1=1 ";
         if("0".equals(pubFlag)){//0为私有字典
-            hql += " and type.userId <> '0' and type.deptId <> '0' " +
-                    " and type.deptId is not null and type.typeName = '"+name+"'";
+            hql += " and (type.userId='"+yunUsers.getId()+"' or (type.deptId='"+yunUsers.getDeptId()+"' and type.deptId<>'0')) " +
+                    " and type.typeName = '"+name+"'";
         }else if("1".equals(pubFlag)){//1为共有字典
             hql += " and type.userId = '0' and type.typeName = '"+name+"'";
         }
         List<String> typeIds = baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
-        if("0".equals(pubFlag) && (typeIds==null || typeIds.isEmpty())){
-            String hql2 = "select type.typeId from YunDicttype as type " +
-                          " where type.userId <> '0' and (type.deptId = '0' or type.deptId is null) " +
-                          " and type.typeName = '"+name+"'";
-            typeIds = baseFacade.createQuery(String.class,hql2,new ArrayList<Object>()).getResultList();
-        }
+//        if("0".equals(pubFlag) && (typeIds==null || typeIds.isEmpty())){
+//            String hql2 = "select type.typeId from YunDicttype as type " +
+//                          " where type.userId <> '0' and (type.deptId = '0' or type.deptId is null) " +
+//                          " and type.typeName = '"+name+"'";
+//            typeIds = baseFacade.createQuery(String.class,hql2,new ArrayList<Object>()).getResultList();
+//        }
         String typeId = typeIds.isEmpty()?"":typeIds.get(0);
         String itemHql = "select item from YunDictitem as item where item.typeIdDm = '"+typeId+"'";
         List<YunDictitem> yunDictitems = baseFacade.createQuery(YunDictitem.class,itemHql,new ArrayList<Object>()).getResultList();
         return yunDictitems;
+    }
+
+    /**
+     * 根据医生ID,科室id和字典标识查询字典类型信息
+     * @param doctorId
+     * @param deptId
+     * @param pubFlag
+     * @return
+     */
+    @GET
+    @Path("list-type-by-doctorId")
+    public List<YunDicttype> listDictTypeByDoctorId(@QueryParam("doctorId") String doctorId,@QueryParam("deptId")String deptId,@QueryParam("pubFlag") String pubFlag) {
+        String hql = "from YunDicttype as type where 1=1 ";
+        if("0".equals(pubFlag)){//0为私有字典
+            hql += " and ( type.userId='"+doctorId+"' or (type.deptId='"+deptId+"' and type.deptId<>'0')) ";
+        }else{//1为共有字典
+            hql += " and type.userId = '0' ";
+        }
+        return baseFacade.createQuery(YunDicttype.class, hql, new ArrayList<Object>()).getResultList();
     }
 }
