@@ -310,7 +310,7 @@ public class TemplateService {
         if(!"".equals(relyon)&&null!=relyon&&!"".equals(relyonvalue)&&null!=relyonvalue){
 
         }
-        extend.setRelyon(relyon);
+        extend.setRelyon(StringUtils.replaceBank(relyon));//relyon 可能含有- 需转换下
         extend.setRelyonvalue(relyonvalue);
 
         extend.setTemplet(dataElement.getTemplet());

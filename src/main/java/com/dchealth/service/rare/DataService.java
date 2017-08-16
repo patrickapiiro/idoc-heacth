@@ -81,7 +81,6 @@ public class DataService {
     }
 
 
-
     /**
      * 新增修改元数据
      * @param yunValue
@@ -91,7 +90,7 @@ public class DataService {
     @Path("merge-value")
     @Transactional
     public Response addYunValue(YunValue yunValue) throws Exception{
-        String hql = " from YunValue where name = '"+yunValue.getName()+" and id <>'"+yunValue.getId()+"'";
+        String hql = " from YunValue where name = '"+yunValue.getName()+"' and id <>'"+yunValue.getId()+"'";
         List<YunValue> yunValueList = baseFacade.createQuery(YunValue.class,hql,new ArrayList<Object>()).getResultList();
         if(yunValueList!=null && !yunValueList.isEmpty()){
             throw new Exception("元数据名称已存在，请重新修改");
@@ -186,7 +185,8 @@ public class DataService {
     @GET
     @Path("list-value-group")
     public List<String> getDiseaseGroupName(@QueryParam("doctorId") String doctorId){
-        String hql = "select distinct (case when y.zflags is null then '' else y.zflags end) from YunValue as y where y.doctorId='"+doctorId+"'" ;
+        String hql = "select distinct (case when y.zflags is null then '' else y.zflags end) from YunValue as y where y.doctorId='"+doctorId+"' " +
+                     " or exists(select 1 from YunUsers as u where u.id = '"+doctorId+"' and u.deptId = y.deptId and u.deptId<>'0')" ;
         return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList() ;
     }
 

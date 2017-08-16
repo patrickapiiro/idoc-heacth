@@ -26,6 +26,7 @@ public class SmsSendUtil {
     private static ConcurrentMap<String, String> paramMap = new ConcurrentHashMap<String, String>();
     private String  secretKey = "bjjmyrj1bjjmyrj2";
     public static final String register = "register";
+    public static final String delPationt = "delPationt";
     private ExecutorService service;
 
     private SmsSendUtil(){
@@ -46,19 +47,21 @@ public class SmsSendUtil {
     class sendCodeHandler implements Runnable{
         private String mobile;
         private String veryCode;
-        public sendCodeHandler(String mobile,String veryCode){
+        private String type;
+        public sendCodeHandler(String mobile,String veryCode,String type){
             this.mobile = mobile;
             this.veryCode = veryCode;
+            this.type = type;
         }
         @Override
         public void run() {
-            sendVeryCode(mobile,veryCode);
+            sendVeryCode(mobile,veryCode,type);
         }
     }
-    public String execSendCode(String mobile) {
+    public String execSendCode(String mobile,String type) {
         Integer veryCodeNum = getStringByKey("veryCodeNum")==null?6:Integer.valueOf(getStringByKey("veryCodeNum"));
         String veryCode = getRandNum(veryCodeNum);
-        this.service.submit(new sendCodeHandler(mobile,veryCode));
+        this.service.submit(new sendCodeHandler(mobile,veryCode,type));
         return veryCode;
     }
     /**
@@ -66,13 +69,16 @@ public class SmsSendUtil {
      */
     public static final String REGEX_MOBILE = "^((13[0-9])|(15[^4])|(18[0,2,3,5-9])|(17[0-8])|(147))\\d{8}$";
 
-    private static void sendVeryCode(String phone,String veryCode){
+    private static void sendVeryCode(String phone,String veryCode,String type){
         String accessKeyId = getStringByKey("accessKeyId");
         String accessKeySecret = getStringByKey("accessKeySecret");
         String mnsEndpoint = getStringByKey("mnsEndpoint");
         String topicName = getStringByKey("topic");
         String signName = getStringByKey("signName");
         String templateCode = getStringByKey("templateCode");
+        if(register.equals(type)){
+            templateCode = getStringByKey("registerTemplateCode")==null?getStringByKey("templateCode"):getStringByKey("registerTemplateCode");
+        }
         CloudAccount account = new CloudAccount(accessKeyId, accessKeySecret, mnsEndpoint);
         MNSClient client = account.getMNSClient();
         CloudTopic topic = client.getTopicRef(topicName);

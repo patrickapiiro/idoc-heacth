@@ -36,7 +36,7 @@ public class DiseaseCountService {
         List<String> dateList = getStaticsDate();
         List<DiseaseStatisVo> diseaseStatisVos = new ArrayList<>();
         //首先查询是否有管理病历信息
-       Set<String> diseaseSet =  getManageDisease(doctorId);
+       //Set<String> diseaseSet =  getManageDisease(doctorId);
        String  diseasHql = "select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
                     "and yud.userId='"+doctorId+"'" ;
        List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class,diseasHql,new ArrayList<Object>()).getResultList();
