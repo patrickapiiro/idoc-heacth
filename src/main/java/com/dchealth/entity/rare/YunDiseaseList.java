@@ -21,7 +21,7 @@ public class YunDiseaseList {
     private String yc;
     private String note;
     private Timestamp modifyDate;
-    private Long deptId;
+    private String deptId;
 
     @Id
     @Column(name = "id")
@@ -120,11 +120,11 @@ public class YunDiseaseList {
 
     @Basic
     @Column(name = "dept_id")
-    public Long getDeptId() {
+    public String getDeptId() {
         return deptId;
     }
 
-    public void setDeptId(Long deptId) {
+    public void setDeptId(String deptId) {
         this.deptId = deptId;
     }
 
