@@ -47,8 +47,7 @@ public class DictService {
             hql += " and typeName like '%" + typeName + "%'";
         }
         if (userId != null && !"".equals(userId)) {
-            hql += " and (userId='"+userId+"' or (deptId='"+yunUsers.getDeptId()+"' and deptId<>'0'))" +
-                    " or userId = '0'";
+            hql += " and (userId='"+userId+"' or (deptId='"+yunUsers.getDeptId()+"' and deptId<>'0'))";
         }
         return baseFacade.createQuery(YunDicttype.class, hql, new ArrayList<Object>()).getResultList();
 }

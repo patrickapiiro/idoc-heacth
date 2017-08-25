@@ -3,10 +3,7 @@ package com.dchealth.service.rare;
 import com.dchealth.VO.*;
 import com.dchealth.entity.common.YunDictitem;
 import com.dchealth.entity.common.YunUsers;
-import com.dchealth.entity.rare.YunDisTemplet;
-import com.dchealth.entity.rare.YunReleaseTemplet;
-import com.dchealth.entity.rare.YunValue;
-import com.dchealth.entity.rare.YunValueFormat;
+import com.dchealth.entity.rare.*;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.JSONUtil;
 import com.dchealth.util.StringUtils;
@@ -94,11 +91,43 @@ public class TemplateService {
     @POST
     @Path("merge")
     @Transactional
-    public Response mergeYunDisTemplate(YunDisTemplet yunDisTemplet){
+    public Response mergeYunDisTemplate(YunDisTemplet yunDisTemplet) throws Exception{
+        if(yunDisTemplet.getId()!=null && !"".equals(yunDisTemplet.getId())){//修改表单模板 则将关联的病例数据进行更新
+            String hql = " from YunDisTemplet where id = '"+yunDisTemplet.getId()+"'";
+            List<YunDisTemplet> yunDisTempletList = baseFacade.createQuery(YunDisTemplet.class,hql,new ArrayList<Object>()).getResultList();
+            if(yunDisTempletList!=null && !yunDisTempletList.isEmpty()){
+                YunDisTemplet yunDisTempletQ = yunDisTempletList.get(0);
+                if(yunDisTempletQ.getTitle()!=null && !yunDisTempletQ.getTitle().equals(yunDisTemplet.getTitle())){
+                    String folderHql = "select d from YunRecordDocment as d,YunFolder as f,YunPatient as p where d.folderId = f.id" +
+                            " and f.patientId = p.id and d.category = 'W' and f.diagnosisCode = '"+yunDisTemplet.getDcode()+"'" +
+                            " and p.doctorId = '"+yunDisTemplet.getDoctorId()+"'";
+                    List<YunRecordDocment> yunRecordDocmentList = baseFacade.createQuery(YunRecordDocment.class,folderHql,new ArrayList<Object>()).getResultList();
+                    changeRecordDocmentContent(yunRecordDocmentList,yunDisTempletQ,yunDisTemplet);
+                }
+            }
+        }
         YunDisTemplet merge = baseFacade.merge(yunDisTemplet);
         return Response.status(Response.Status.OK).entity(merge).build();
     }
 
+    public void changeRecordDocmentContent(List<YunRecordDocment> yunRecordDocmentList,YunDisTemplet dbtemplet,YunDisTemplet cmttemplet) throws Exception{
+        if(yunRecordDocmentList!=null && !yunRecordDocmentList.isEmpty()){
+            for(int i=0;i<yunRecordDocmentList.size();i++){
+                YunRecordDocment yunRecordDocment = yunRecordDocmentList.get(i);
+                DocumentData documentData = (DocumentData)JSONUtil.JSONToObj(yunRecordDocment.getContent(),DocumentData.class);
+                List<DocumentDataElement> documentDataElements = documentData.getData();
+                for(int k=0;k<documentDataElements.size();k++){
+                    DocumentDataElement documentDataElement =  documentDataElements.get(k);
+                    if(documentDataElement.getName()!=null && documentDataElement.getName().equals(dbtemplet.getTitle())){
+                        documentDataElement.setName(cmttemplet.getTitle());
+                    }
+                }
+                documentData.setData(documentDataElements);
+                yunRecordDocment.setContent(JSONUtil.objectToJsonString(documentData));
+                baseFacade.merge(yunRecordDocment);
+            }
+        }
+    }
     /**
      * 删除模板
      * @param templateId
@@ -321,7 +350,7 @@ public class TemplateService {
 
         if(dict!=null&&!"".equals(dict)){
             String hqlDict = "select yi from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"'" +
-                    " and ((yd.deptId='0' and yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.userId='"+id+"'))" +
+                    " and (( yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.deptId<>'0'))" +
                     " order by yd.userId ,yd.deptId desc" ;
             List<YunDictitem> resultList1 = baseFacade.createQuery(YunDictitem.class, hqlDict, new ArrayList<Object>()).getResultList();
             if(resultList1.size()<1){
@@ -345,6 +374,7 @@ public class TemplateService {
                 rowItem.setName(StringUtils.replaceBank(value));//value 是否修改
                 rowItem.setText(yunDictitem.getItemName());
                 rowItem.setValue(yunDictitem.getItemCode());
+                rowItem.setLoincCode(yunDictitem.getLoincCode());
                 elementRow.getItems().add(rowItem);
             }
         }
