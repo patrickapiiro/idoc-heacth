@@ -146,7 +146,7 @@ public class PatientService {
         TypedQuery<PatientFollowUpVo> pfBaseTypedQuery = baseFacade.createQuery(PatientFollowUpVo.class, pfHql, new ArrayList<Object>());
         yunPatientPage.setCounts(aLong);
         if(perPage>0){
-            pfBaseTypedQuery.setFirstResult(currentPage*perPage) ;
+            pfBaseTypedQuery.setFirstResult((currentPage-1)*perPage) ;
             pfBaseTypedQuery.setMaxResults(perPage);
         }
         List<PatientFollowUpVo> patientFollowUpVos = pfBaseTypedQuery.getResultList();

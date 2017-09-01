@@ -102,7 +102,7 @@ public class TemplateService {
                             " and f.patientId = p.id and d.category = 'W' and f.diagnosisCode = '"+yunDisTemplet.getDcode()+"'" +
                             " and p.doctorId = '"+yunDisTemplet.getDoctorId()+"'";
                     List<YunRecordDocment> yunRecordDocmentList = baseFacade.createQuery(YunRecordDocment.class,folderHql,new ArrayList<Object>()).getResultList();
-                    changeRecordDocmentContent(yunRecordDocmentList,yunDisTempletQ,yunDisTemplet);
+                    //changeRecordDocmentContent(yunRecordDocmentList,yunDisTempletQ,yunDisTemplet);
                 }
             }
         }
