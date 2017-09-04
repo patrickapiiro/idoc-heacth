@@ -1,6 +1,7 @@
 package com.dchealth.service.rare;
 
 import com.dchealth.VO.DcodeCountInfo;
+import com.dchealth.VO.DiseaseShareCount;
 import com.dchealth.VO.DiseaseStatisVo;
 import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
@@ -147,5 +148,31 @@ public class DiseaseCountService {
             dateList.add(dateStr);
         }
         return dateList;
+    }
+
+    /**
+     *获取数据共享各个疾病的病例数统计
+     * @return
+     */
+    @GET
+    @Path("get-disease-share-count")
+    public List<DiseaseShareCount> getDiseaseShareCounts(){
+        List<DiseaseShareCount> diseaseShareCounts = new ArrayList<>();
+        String sql = "select count(p.id),f.diagnosis_code,(select name from yun_disease_list where dcode = f.diagnosis_code)" +
+                " from yun_folder f,yun_patient p where f.patient_id = p.id and f.diagnosis_code !='' group by f.diagnosis_code";
+        List list = baseFacade.createNativeQuery(sql).getResultList();
+        if(list!=null && !list.isEmpty()) {
+            int size = list.size();
+            for (int i = 0; i < size; i++) {
+                DiseaseShareCount diseaseShareCount = new DiseaseShareCount();
+                Object[] params = (Object[]) list.get(i);
+                int count = Integer.valueOf(params[0].toString());
+                diseaseShareCount.setCount(count);
+                diseaseShareCount.setDcode(params[1]+"");
+                diseaseShareCount.setDcodeName(params[2]+"");
+                diseaseShareCounts.add(diseaseShareCount);
+            }
+        }
+        return diseaseShareCounts;
     }
 }
