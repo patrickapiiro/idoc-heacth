@@ -27,6 +27,8 @@ public class SmsSendUtil {
     private String  secretKey = "bjjmyrj1bjjmyrj2";
     public static final String register = "register";
     public static final String delPationt = "delPationt";
+    public static final String pictureCode = "pictureCode";
+    public static final String pictureCodeToRegister = "pictureCodeToRegister";
     private ExecutorService service;
 
     private SmsSendUtil(){
