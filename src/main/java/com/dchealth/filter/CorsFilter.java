@@ -5,6 +5,8 @@ import org.springframework.web.bind.ServletRequestDataBinder;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,8 +37,11 @@ public class CorsFilter implements Filter {
         res.setCharacterEncoding("UTF-8");
         if(isLegal){
             filterChain.doFilter(servletRequest, res);
+        }else{
+            throw new ServletException("获取注册短信验证码次数已达上限，请您明天再来");
         }
     }
+
     public void initIpMap(){
         Runnable runnable = new Runnable() {
             public void run() {
@@ -56,7 +61,7 @@ public class CorsFilter implements Filter {
         }else{
             if(ipMap.get(ip)!=null){
                 Integer number = ipMap.get(ip)+1;
-                if(number<5){
+                if(number<21){
                     ipMap.put(ip,number);
                     isLegal = true;
                 }
@@ -70,6 +75,7 @@ public class CorsFilter implements Filter {
     public String getIpAddr(HttpServletRequest request) {
                 String ip = "";
                 String uri = request.getRequestURI();
+                request.getSession();
                 if(!StringUtils.isEmpty(uri) && uri.contains("api/yun-user/get-very-code-by-mobile")){
                     ip = request.getHeader("x-forwarded-for");
                     if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
