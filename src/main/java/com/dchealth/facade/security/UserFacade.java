@@ -3,7 +3,10 @@ package com.dchealth.facade.security;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.common.BaseFacade;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.ws.rs.POST;
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,5 +52,17 @@ public class UserFacade extends BaseFacade {
         }else{
             throw new Exception("不存在的用户名");
         }
+    }
+
+    /**
+     * 用户注册，保存用户信息
+     * @param yunUsers
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Transactional
+    public Response mergeYunUsers(YunUsers yunUsers) throws Exception{
+        return Response.status(Response.Status.OK).entity(merge(yunUsers)).build();
     }
 }

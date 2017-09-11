@@ -63,7 +63,6 @@ public class YunUserService {
      */
     @Path("regist")
     @POST
-    @Transactional
     public Response registYunUser(@QueryParam("pictureCode") String pictureCode,@QueryParam("veryCode") String veryCode, YunUsers yunUsers,@Context HttpServletRequest request) throws Exception{
         if("true".equals(SmsSendUtil.getStringByKey("openVeryCode"))){
             if(StringUtils.isEmpty(pictureCode)){
@@ -84,16 +83,21 @@ public class YunUserService {
                 throw new Exception("验证码不正确，请重新输入");
             }
         }
-        long id = new Date().getTime();
-        yunUsers.setId(String.valueOf(id));
-        PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
-        yunUsers.setPassword(passwordAndSalt.getPassword());
-        yunUsers.setSalt(passwordAndSalt.getSalt());
+        Response response = null;
+        try {
+            long id = new Date().getTime();
+            yunUsers.setId(String.valueOf(id));
+            PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
+            yunUsers.setPassword(passwordAndSalt.getPassword());
+            yunUsers.setSalt(passwordAndSalt.getSalt());
+            response = userFacade.mergeYunUsers(yunUsers);
+        }catch (Exception e){
+            throw e;
+        }
         request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.register);
         request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.pictureCode);//清除图形验证码
-        return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
+        return response;
     }
-
 
     /**
      * 更新用户
