@@ -10,6 +10,7 @@ public class RowItem {
     private String value;
     private String text ;
     private String inputcode ;
+    private String loincCode;
 
     public String getName() {
         return name;
@@ -41,5 +42,13 @@ public class RowItem {
 
     public void setInputcode(String inputcode) {
         this.inputcode = inputcode;
+    }
+
+    public String getLoincCode() {
+        return loincCode;
+    }
+
+    public void setLoincCode(String loincCode) {
+        this.loincCode = loincCode;
     }
 }

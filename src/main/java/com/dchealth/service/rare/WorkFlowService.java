@@ -251,6 +251,9 @@ public class WorkFlowService {
                 }
             }else{
                 YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
+                if(yunRecordDocment==null){
+                    yunRecordDocment = getYunRecordDocmentByPid(pid);
+                }
                 String folderId = yunRecordDocment.getFolderId();
                 YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
                 String patientId = yunFolder.getPatientId();
@@ -266,6 +269,20 @@ public class WorkFlowService {
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("未进入判断流程，请检查入参").build();
     }
 
+    /**
+     * 根据病人id查询文档信息
+     * @param pid
+     * @return
+     */
+    public YunRecordDocment getYunRecordDocmentByPid(String pid){
+        String hql = "select d from YunRecordDocment d,YunFolder f where d.folderId = f.id and f.patientId = '"+pid+"'";
+        List<YunRecordDocment> yunRecordDocments = baseFacade.createQuery(YunRecordDocment.class,hql,new ArrayList<Object>()).getResultList();
+        if(yunRecordDocments!=null && !yunRecordDocments.isEmpty()){
+            return yunRecordDocments.get(0);
+        }else{
+            return null;
+        }
+    }
     public void modifyFollowUpStatus(String followId){
         if(followId!=null && !"".equals(followId)){
             String hql = " from YunFollowUp as f where f.hstatus = 'S' and f.id = '"+followId+"'";
@@ -419,7 +436,4 @@ public class WorkFlowService {
         }
         return infoLists;
     }
-
-
-
 }

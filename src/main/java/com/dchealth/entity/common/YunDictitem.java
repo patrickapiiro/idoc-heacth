@@ -15,6 +15,7 @@ public class YunDictitem {
     private String itemCode;
     private String itemName;
     private String inputCode;
+    private String loincCode;
 
     public void setSerialNo(String serialNo) {
         this.serialNo = serialNo;
@@ -68,6 +69,16 @@ public class YunDictitem {
         this.inputCode = inputCode;
     }
 
+    @Basic
+    @Column(name = "loinc_code")
+    public String getLoincCode() {
+        return loincCode;
+    }
+
+    public void setLoincCode(String loincCode) {
+        this.loincCode = loincCode;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -80,6 +91,7 @@ public class YunDictitem {
         if (itemCode != null ? !itemCode.equals(that.itemCode) : that.itemCode != null) return false;
         if (itemName != null ? !itemName.equals(that.itemName) : that.itemName != null) return false;
         if (inputCode != null ? !inputCode.equals(that.inputCode) : that.inputCode != null) return false;
+        if (loincCode != null ? !loincCode.equals(that.loincCode) : that.loincCode != null) return false;
 
         return true;
     }
@@ -91,6 +103,7 @@ public class YunDictitem {
         result = 31 * result + (itemCode != null ? itemCode.hashCode() : 0);
         result = 31 * result + (itemName != null ? itemName.hashCode() : 0);
         result = 31 * result + (inputCode != null ? inputCode.hashCode() : 0);
+        result = 31 * result + (loincCode != null ? loincCode.hashCode() : 0);
         return result;
     }
 }

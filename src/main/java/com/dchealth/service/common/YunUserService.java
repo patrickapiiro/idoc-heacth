@@ -21,16 +21,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.imageio.ImageIO;
 import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
+import java.io.OutputStream;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Administrator on 2017/6/6.
@@ -44,6 +53,9 @@ public class YunUserService {
     @Autowired
     private UserFacade userFacade ;
 
+    private Map<String,Integer> mobileMap = new ConcurrentHashMap<String,Integer>();
+    private Map<String,Long> timeMap = new ConcurrentHashMap<String,Long>();
+
     /**
      * 注册用户信息
      * @param yunUsers
@@ -51,9 +63,15 @@ public class YunUserService {
      */
     @Path("regist")
     @POST
-    @Transactional
-    public Response registYunUser(@QueryParam("veryCode") String veryCode, YunUsers yunUsers,@Context HttpServletRequest request) throws Exception{
+    public Response registYunUser(@QueryParam("pictureCode") String pictureCode,@QueryParam("veryCode") String veryCode, YunUsers yunUsers,@Context HttpServletRequest request) throws Exception{
         if("true".equals(SmsSendUtil.getStringByKey("openVeryCode"))){
+            if(StringUtils.isEmpty(pictureCode)){
+                throw new Exception("图形验证码不能为空");
+            }
+            String sessionPictureCode = request.getSession().getAttribute(request.getSession().getId()+SmsSendUtil.pictureCodeToRegister)==null?"":request.getSession().getAttribute(request.getSession().getId()+SmsSendUtil.pictureCodeToRegister)+"";
+            if(!pictureCode.equals(sessionPictureCode)){
+                throw new Exception("图形验证码输入错误，请重新输入");
+            }
             if(StringUtils.isEmpty(veryCode)){
                 throw new Exception("验证码不能为空，请重新输入");
             }
@@ -65,15 +83,21 @@ public class YunUserService {
                 throw new Exception("验证码不正确，请重新输入");
             }
         }
-        long id = new Date().getTime();
-        yunUsers.setId(String.valueOf(id));
-        PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
-        yunUsers.setPassword(passwordAndSalt.getPassword());
-        yunUsers.setSalt(passwordAndSalt.getSalt());
+        Response response = null;
+        try {
+            long id = new Date().getTime();
+            yunUsers.setId(String.valueOf(id));
+            PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
+            yunUsers.setPassword(passwordAndSalt.getPassword());
+            yunUsers.setSalt(passwordAndSalt.getSalt());
+            response = userFacade.mergeYunUsers(yunUsers);
+        }catch (Exception e){
+            throw e;
+        }
         request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.register);
-        return Response.status(Response.Status.OK).entity(userFacade.merge(yunUsers)).build();
+        request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.pictureCode);//清除图形验证码
+        return response;
     }
-
 
     /**
      * 更新用户
@@ -402,20 +426,93 @@ public class YunUserService {
      */
     @GET
     @Path("get-very-code-by-mobile")
-    public List<String> getVeryCodeByPhone(@QueryParam("mobile") String mobile,@Context HttpServletRequest request) throws Exception{
+    public List<String> getVeryCodeByPhone(@QueryParam("pictureCode") String pictureCode,@QueryParam("mobile") String mobile,@Context HttpServletRequest request) throws Exception{
         List<String> list = new ArrayList<>();
+        if(StringUtils.isEmpty(pictureCode)){
+            throw new Exception("图形验证码不能为空");
+        }
+        String sessionPictureCode = request.getSession().getAttribute(request.getSession().getId()+SmsSendUtil.pictureCode)==null?"":request.getSession().getAttribute(request.getSession().getId()+SmsSendUtil.pictureCode)+"";
+        if(!pictureCode.equals(sessionPictureCode)){
+            throw new Exception("图形验证码输入错误，请重新输入");
+        }
         if(StringUtils.isEmpty(mobile)){
             throw new Exception("手机号不能为空");
         }
         if(!SmsSendUtil.isMobile(mobile)){
             throw new Exception("用户手机号不正确，请重新输入");
         }
+//        if(mobileMap.get(mobile)!=null){
+//            Integer number = mobileMap.get(mobile)+1;
+//            Long time = timeMap.get(mobile);
+//            Long now = new Date().getTime();
+//            if((now-time)<60000 && number>1){
+//                throw new Exception("请求过于频繁，请稍后重试");
+//            }else if((now-time)<60*60*1000 && number>3){
+//                throw new Exception("请求过于频繁，请稍后重试");
+//            }else if((now-time)>=60*60*1000){
+//                mobileMap.put(mobile,1);
+//                timeMap.put(mobile,new Date().getTime());
+//            }else{
+//                mobileMap.put(mobile,number);
+//            }
+//        }else{
+//            mobileMap.put(mobile,1);
+//            timeMap.put(mobile,new Date().getTime());
+//        }
+
         String veryCode = SmsSendUtil.getInstance().execSendCode(mobile,SmsSendUtil.register);
         list.add(mobile);
         if(request!=null){
             request.getSession().setAttribute(request.getSession().getId()+SmsSendUtil.register,veryCode);
+            request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.pictureCode);//清除图形验证码
+            request.getSession().setAttribute(request.getSession().getId()+SmsSendUtil.pictureCodeToRegister,sessionPictureCode);
         }
         return list;
+    }
+
+    /**
+     * 获取注册图形验证码
+     * @param request
+     * @return
+     */
+    @GET
+    @Path("get-picture-code")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response getPictureCode(@Context HttpServletRequest request, @Context HttpServletResponse response) throws Exception{
+        StringBuffer pictureCode = new StringBuffer("");
+        int width = 120;
+        int height = 41;
+        int lines = 10;
+        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics g = img.getGraphics();
+        // 设置背景色
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, width, height);
+        // 设置字体
+        g.setFont(new Font("宋体", Font.BOLD, 20));
+        // 随机数字
+        Random r = new Random(new Date().getTime());
+        for (int i = 0; i < 4; i++) {
+            int a = r.nextInt(10);
+            int y = 10 + r.nextInt(20);// 10~30范围内的一个整数，作为y坐标
+
+            Color c = new Color(r.nextInt(255), r.nextInt(255), r.nextInt(255));
+            g.setColor(c);
+
+            g.drawString("" + a, 5 + i * width / 4, y);
+            pictureCode.append(a);
+        }
+        // 干扰线
+        for (int i = 0; i < lines; i++) {
+            Color c = new Color(r.nextInt(255), r.nextInt(255), r.nextInt(255));
+            g.setColor(c);
+            g.drawLine(r.nextInt(width), r.nextInt(height), r.nextInt(width), r.nextInt(height));
+        }
+        g.dispose();// 类似于流中的close()带动flush()---把数据刷到img对象当中
+        ImageIO.write(img, "JPG", response.getOutputStream());
+        request.getSession().setAttribute(request.getSession().getId()+SmsSendUtil.pictureCode,pictureCode.toString());
+        return Response.status(Response.Status.OK).entity(response.getOutputStream()).header("Content-disposition","attachment;filename="+"图形码")
+                .header("Cache-Control","no-cache").build();
     }
     /**
      *  获取删除病人手机短信验证码

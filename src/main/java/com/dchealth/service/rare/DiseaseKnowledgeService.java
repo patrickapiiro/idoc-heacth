@@ -75,6 +75,7 @@ public class DiseaseKnowledgeService {
         if(dcode!=null && !"".equals(dcode)){
             hql += " and dk.diseaseCode = '"+dcode+"'";
         }
+        hql +=" order by dk.createDate asc";
         return baseFacade.createQuery(YunDiseaseKnowledge.class,hql,new ArrayList<Object>()).getResultList();
     }
 
