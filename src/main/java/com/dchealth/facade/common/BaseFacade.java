@@ -1,13 +1,12 @@
 package com.dchealth.facade.common;
 
-import com.dchealth.entity.common.YunUsers;
+import com.dchealth.VO.Page;
 import com.dchealth.util.AliasToBeanResultTransformer;
+import com.dchealth.util.StringUtils;
 import com.google.common.base.Optional;
 import org.hibernate.SQLQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
 import javax.persistence.*;
 import javax.persistence.criteria.CriteriaQuery;
 import java.util.ArrayList;
@@ -692,5 +691,50 @@ public class BaseFacade {
     @PersistenceContext
     public void setEntityManager(EntityManager entityManager){
         this.entityManager = entityManager;
+    }
+
+    /**
+     * 获取分页查询信息 默认值为20条
+     * @param entityClass
+     * @param hql
+     * @param perPage
+     * @param currentPage
+     * @param <T>
+     * @return
+     */
+    public <T> Page<T> getPageResult(Class<T> entityClass, String hql, int perPage, int currentPage) {
+        Page<T> resultPage = new Page<>();
+        String hqlCount = getHqlCount(hql,entityClass.getSimpleName());
+        TypedQuery<T> typedQuery = createQuery(entityClass,hql,new ArrayList<Object>());
+        Long counts =  createQuery(Long.class,hqlCount,new ArrayList<Object>()).getSingleResult();
+        resultPage.setCounts(counts);
+        if(perPage<=0){
+            perPage =15;
+        }
+        if(currentPage<=0){
+            currentPage=1;
+        }
+        typedQuery.setFirstResult((currentPage-1)*perPage);
+        typedQuery.setMaxResults(perPage);
+        resultPage.setPerPage((long)perPage);
+        List<T> resultList = typedQuery.getResultList();
+        resultPage.setData(resultList);
+        return resultPage;
+    }
+
+    public static String getHqlCount(String hql,String entityName){
+        String hqlCount = "";
+        if(StringUtils.isEmpty(hql)){
+            return hqlCount;
+        }
+        String hqlUpper = hql.toUpperCase();
+        int fromIndex = hqlUpper.indexOf("FROM");
+        if(hqlUpper.contains("DISTINCT")){
+            int disIndex = hqlUpper.indexOf("DISTINCT");
+            hqlCount = "SELECT COUNT("+hql.substring(disIndex,fromIndex)+") "+hql.substring(fromIndex);
+        }else{
+            hqlCount = "SELECT COUNT(*) "+hql.substring(fromIndex);
+        }
+        return hqlCount;
     }
 }
