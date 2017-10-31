@@ -1,25 +1,29 @@
 package com.dchealth.service.rare;
 
 import com.aliyun.mns.client.impl.queue.CreateQueueAction;
+import com.dchealth.VO.InviteUserVo;
 import com.dchealth.VO.Page;
+import com.dchealth.VO.ResearchGroupVo;
+import com.dchealth.entity.common.HospitalDict;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.InviteApplyRecord;
 import com.dchealth.entity.rare.ResearchGroup;
+import com.dchealth.entity.rare.ResearchGroupVsHospital;
 import com.dchealth.entity.rare.ResearchGroupVsUser;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.provider.MessagePush;
 import com.dchealth.util.DwrScriptSessionManagerUtil;
 import com.dchealth.util.StringUtils;
 import com.dchealth.util.UserUtils;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
+import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Administrator on 2017/10/19.
@@ -34,21 +38,37 @@ public class ResearchGroupService {
 
     /**
      * 添加，修改，删除群组，删除为逻辑删除 status = -1
-     * @param researchGroup
+     * @param researchGroupVo
      * @return
      */
     @POST
     @Path("merge")
     @Transactional
-    public Response mergeResearchGroup(ResearchGroup researchGroup) throws Exception{
-        if("-1".equals(researchGroup.getStatus())){
-            String delHospitalHql = " delete from ResearchGroupVsHospital where groupId = '"+researchGroup.getId()+"'";
+    public Response mergeResearchGroup(ResearchGroupVo researchGroupVo) throws Exception{
+        if("-1".equals(researchGroupVo.getStatus())){
+            String delHospitalHql = " delete from ResearchGroupVsHospital where groupId = '"+researchGroupVo.getId()+"'";
             baseFacade.excHql(delHospitalHql);
-            String delUser = "delete from ResearchGroupVsUser where groupId = '"+researchGroup.getId()+"'";
+            String delUser = "delete from ResearchGroupVsUser where groupId = '"+researchGroupVo.getId()+"'";
             baseFacade.excHql(delUser);
         }
-        if(StringUtils.isEmpty(researchGroup.getId())){
+        if(StringUtils.isEmpty(researchGroupVo.getId())){
+            ResearchGroup researchGroup = new ResearchGroup();
+            researchGroup.setDataShareLevel(researchGroupVo.getDataShareLevel());
+            researchGroup.setGroupDesc(researchGroupVo.getGroupDesc());
+            researchGroup.setGroupInInfo(researchGroupVo.getGroupInInfo());
+            researchGroup.setManyHospitalFlag(researchGroupVo.getManyHospitalFlag());
+            researchGroup.setResearchDiseaseId(researchGroupVo.getResearchDiseaseId());
+            researchGroup.setResearchGroupName(researchGroupVo.getResearchGroupName());
+            researchGroup.setStatus(researchGroupVo.getStatus());
             ResearchGroup merge = baseFacade.merge(researchGroup);
+            if(researchGroupVo.getHospitals()!=null && !researchGroupVo.getHospitals().isEmpty()){
+                for(HospitalDict hospitalDict:researchGroupVo.getHospitals()){
+                    ResearchGroupVsHospital researchGroupVsHospital = new ResearchGroupVsHospital();
+                    researchGroupVsHospital.setGroupId(merge.getId());
+                    researchGroupVsHospital.setHospitalId(hospitalDict.getId());
+                    ResearchGroupVsHospital mergeHospital = baseFacade.merge(researchGroupVsHospital);
+                }
+            }
             YunUsers yunUsers = UserUtils.getYunUsers();
             ResearchGroupVsUser researchGroupVsUser = new ResearchGroupVsUser();
             researchGroupVsUser.setLearderFlag("1");
@@ -58,7 +78,7 @@ public class ResearchGroupService {
             baseFacade.merge(researchGroupVsUser);
             return Response.status(Response.Status.OK).entity(merge).build();
         }
-        return Response.status(Response.Status.OK).entity(baseFacade.merge(researchGroup)).build();
+        return Response.status(Response.Status.OK).entity(baseFacade.merge(researchGroupVo)).build();
     }
 
     /**
@@ -73,10 +93,11 @@ public class ResearchGroupService {
      */
     @GET
     @Path("get-research-groups")
-    public Page<ResearchGroup> getResearchGroups(@QueryParam("groupName")String groupName,@QueryParam("diseaseId")String diseaseId,
+    public Page<ResearchGroupVo> getResearchGroups(@QueryParam("groupName")String groupName,@QueryParam("diseaseId")String diseaseId,
                                                  @QueryParam("userId")String userId,@QueryParam("status")String status,@QueryParam("userType")String userType,
                                                  @QueryParam("perPage") int perPage,@QueryParam("currentPage") int currentPage){
-        String hql = " from ResearchGroup as r where r.status <>'-1'";
+        String hql = "select new com.dchealth.VO.ResearchGroupVo(r.id,r.researchGroupName,r.researchDiseaseId,r.groupDesc,r.groupInInfo," +
+                "r.manyHospitalFlag,r.dataShareLevel,r.status)  from ResearchGroup as r where r.status <>'-1'";
         if(!StringUtils.isEmpty(groupName)){
             hql += " and r.researchGroupName like '%"+groupName+"%'";
         }
@@ -97,7 +118,40 @@ public class ResearchGroupService {
         if(!StringUtils.isEmpty(status)){
             hql += " and status = '"+status+"'";
         }
-        return baseFacade.getPageResult(ResearchGroup.class,hql,perPage,currentPage);
+        Page<ResearchGroupVo> researchGroupPage = baseFacade.getPageResult(ResearchGroupVo.class,hql,perPage,currentPage);
+        Map<String,List<HospitalDict>> map = new HashMap<String,List<HospitalDict>>();
+        StringBuffer groupIds = new StringBuffer("");
+        for(ResearchGroupVo researchGroupVo:researchGroupPage.getData()){
+            groupIds.append("'").append(researchGroupVo.getId()).append("',");
+            if(map.get(researchGroupVo.getId())==null){
+                List<HospitalDict> hospitalDicts = new ArrayList<>();
+                map.put(researchGroupVo.getId(),hospitalDicts);
+            }
+        }
+        String groupIdsTo = groupIds.toString();
+        groupIdsTo = groupIdsTo.substring(0,groupIdsTo.length()-1);
+        String hospitalSql = "select h.id,h.hospital_name,h.hospital_code,h.status,r.group_id from hospital_dict as h,research_group_vs_hospital as r where h.status<>'-1' and r.hospital_id = h.id and r.group_id in ("+groupIdsTo+")";
+        List list = baseFacade.createNativeQuery(hospitalSql).getResultList();
+        if(list!=null && !list.isEmpty()){
+            int size = list.size();
+            for(int i=0;i<size;i++){
+                Object[] params = (Object[])list.get(i);
+                String groupId = (String)params[4];
+                if(map.get(groupId)!=null){
+                    List<HospitalDict> hospitalDicts = map.get(groupId);
+                    HospitalDict hospitalDict = new HospitalDict();
+                    hospitalDict.setId((String)params[0]);
+                    hospitalDict.setHospitalName((String)params[1]);
+                    hospitalDict.setHospitalCode((String)params[2]);
+                    hospitalDict.setStatus((String)params[3]);
+                    hospitalDicts.add(hospitalDict);
+                }
+            }
+        }
+        for(ResearchGroupVo researchGroupVo:researchGroupPage.getData()){
+            researchGroupVo.setHospitals(map.get(researchGroupVo.getId()));
+        }
+        return researchGroupPage;
     }
 
     /**
@@ -107,11 +161,17 @@ public class ResearchGroupService {
      */
     @GET
     @Path("get-research-group")
-    public ResearchGroup getResearchGroupById(@QueryParam("groupId")String groupId) throws Exception{
+    public ResearchGroupVo getResearchGroupById(@QueryParam("groupId")String groupId) throws Exception{
         String hql = " from ResearchGroup where id = '"+groupId+"'";
         List<ResearchGroup> researchGroups = baseFacade.createQuery(ResearchGroup.class,hql,new ArrayList<Object>()).getResultList();
+        String hospitalSql = "select h from HospitalDict as h,ResearchGroupVsHospital as r where h.status<>'-1' and r.hospitalId = h.id and r.groupId  ='"+groupId+"'";
+        List<HospitalDict> hospitalDicts = baseFacade.createQuery(HospitalDict.class,hospitalSql,new ArrayList<Object>()).getResultList();
         if(researchGroups!=null && !researchGroups.isEmpty()){
-            return researchGroups.get(0);
+            ResearchGroupVo researchGroupVo = new ResearchGroupVo(researchGroups.get(0).getId(),researchGroups.get(0).getResearchGroupName(),
+                    researchGroups.get(0).getResearchDiseaseId(),researchGroups.get(0).getGroupDesc(),researchGroups.get(0).getGroupInInfo(),
+                    researchGroups.get(0).getManyHospitalFlag(),researchGroups.get(0).getDataShareLevel(),researchGroups.get(0).getStatus());
+            researchGroupVo.setHospitals(hospitalDicts);
+            return researchGroupVo;
         }else{
             throw new Exception("该群组信息不存在");
         }
@@ -220,6 +280,140 @@ public class ResearchGroupService {
         }
     }
 
+    /**
+     * 登录用户查看自己创建的组已邀请人员信息
+     * @param userID 用户id 对应id 非userId
+     * @param status 0表示待处理、1表示邀请人同意 -1表示拒绝
+     * @param perPage 每页条数
+     * @param currentPage 当前页
+     *                    flag    1表示邀请   0表示申请
+     * @return
+     */
+    @GET
+    @Path("get-already-invite-users")
+    public Page<InviteUserVo> getInviteUsers(@QueryParam("userID")String userID,@QueryParam("status")String status,
+                                         @QueryParam("perPage") int perPage,@QueryParam("currentPage") int currentPage){
+        return getInviteOrApplyUserVos(userID,status,"1",perPage,currentPage);
+    }
+
+    /**
+     *根据用户id获取用户创建组申请人员信息
+     * @param userID 用户id 对应id 非userId
+     * @param status 0表示待处理、1表示邀请人同意 -1表示拒绝
+     * @param perPage 每页条数
+     * @param currentPage 当前页
+     *                    flag    1表示邀请   0表示申请
+     * @return
+     */
+    @GET
+    @Path("get-already-apply-users")
+    public Page<InviteUserVo> getApplyUsers(@QueryParam("userID")String userID,@QueryParam("status")String status,
+                                             @QueryParam("perPage") int perPage,@QueryParam("currentPage") int currentPage){
+        return getInviteOrApplyUserVos(userID,status,"0",perPage,currentPage);
+    }
+    /**
+     *根据flag值判断是邀请或者申请，如果是邀请 获取当前用户邀请人员信息，如果为申请获取该用户创建组的申请人员信息
+     * @param userID 用户id 对应id 非userId
+     * @param status 0表示待处理、1表示邀请人同意 -1表示拒绝
+     * @param flag 1表示邀请   0表示申请
+     * @param perPage 每页条数
+     * @param currentPage 当前页
+     * @return
+     */
+    public Page<InviteUserVo> getInviteOrApplyUserVos(String userID,String status,String flag,int perPage,int currentPage){
+        String hql = "select new com.dchealth.VO.InviteUserVo(u.id,u.userName,u.sex,u.nation,u.mobile,u.tel,u.email,u.birthDate," +
+                "u.title,u.hospitalName,g.researchGroupName as groupName,(select d.name from YunDiseaseList as d where d.id = g.researchDiseaseId) as diseaseName,p.id as recordId,p.status)" +
+                " from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
+                " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
+                " c.userId = '"+userID+"'";
+        String hqlCount = "select count(*) from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
+                " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
+                " c.userId = '"+userID+"'";
+        if(!StringUtils.isEmpty(status)){
+            hql += " and p.status = '"+status+"'";
+            hqlCount += " and p.status = '"+status+"'";
+        }
+        Page<InviteUserVo> resultPage = new Page<>();
+        TypedQuery<InviteUserVo> typedQuery = baseFacade.createQuery(InviteUserVo.class,hql,new ArrayList<Object>());
+        Long counts =  baseFacade.createQuery(Long.class,hqlCount,new ArrayList<Object>()).getSingleResult();
+        resultPage.setCounts(counts);
+        if(perPage<=0){
+            perPage =1;
+        }
+        if(currentPage<=0){
+            currentPage=1;
+        }
+        typedQuery.setFirstResult((currentPage-1)*perPage);
+        typedQuery.setMaxResults(perPage);
+        resultPage.setPerPage((long)perPage);
+        List<InviteUserVo> resultList = typedQuery.getResultList();
+        resultPage.setData(resultList);
+        return resultPage;
+    }
+    /**
+     *flag=1表示获取邀请自己的记录 包含同意的，未同意的，待处理的，flag=0表示自己申请的记录信息
+     * @param userID 用户id 对应id 非userId
+     * @param status 0表示待处理、1表示邀请人同意 -1表示拒绝
+     * flag    1表示邀请   0表示申请
+     * @return
+     */
+    @GET
+    @Path("get-invite-or-apply-records")
+    public Page<InviteUserVo> getMyInviteApplyRecords(@QueryParam("userID")String userID,@QueryParam("status")String status,@QueryParam("flag")String flag,
+                                                      @QueryParam("perPage") int perPage,@QueryParam("currentPage") int currentPage){
+        String hql = "select new com.dchealth.VO.InviteUserVo(u.id,u.userName,u.sex,u.nation,u.mobile,u.tel,u.email,u.birthDate," +
+                "u.title,u.hospitalName,g.researchGroupName as groupName,(select d.name from YunDiseaseList as d where d.id = g.researchDiseaseId) as diseaseName,p.id as recordId,p.status)" +
+                " from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
+                " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
+                " c.userId != '"+userID+"' and p.userId = '"+userID+"'";
+        String hqlCount = "select count(*) from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
+                " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
+                " c.userId != '"+userID+"' and p.userId = '"+userID+"'";
+        if(!StringUtils.isEmpty(status)){
+            hql += " and p.status = '"+status+"'";
+            hqlCount += " and p.status = '"+status+"'";
+        }
+        Page<InviteUserVo> resultPage = new Page<>();
+        TypedQuery<InviteUserVo> typedQuery = baseFacade.createQuery(InviteUserVo.class,hql,new ArrayList<Object>());
+        Long counts =  baseFacade.createQuery(Long.class,hqlCount,new ArrayList<Object>()).getSingleResult();
+        resultPage.setCounts(counts);
+        if(perPage<=0){
+            perPage =1;
+        }
+        if(currentPage<=0){
+            currentPage=1;
+        }
+        typedQuery.setFirstResult((currentPage-1)*perPage);
+        typedQuery.setMaxResults(perPage);
+        resultPage.setPerPage((long)perPage);
+        List<InviteUserVo> resultList = typedQuery.getResultList();
+        resultPage.setData(resultList);
+        return resultPage;
+    }
+
+    /**
+     *对群组邀请进行操作，同意或拒绝，或者申请进行操作，同意或拒绝
+     * @param recordId 邀请记录id
+     * @param status 状态值 0表示待处理、1表示同意-1表示为拒绝
+     * @return
+     */
+    @POST
+    @Path("confirm-invite-record")
+    @Transactional
+    public Response confirmInviteRecord(@QueryParam("recordId")String recordId,@QueryParam("status")String status) throws Exception{
+        InviteApplyRecord inviteApplyRecord = null;
+        try {
+            inviteApplyRecord = baseFacade.get(InviteApplyRecord.class,recordId);
+            if("0".equals(inviteApplyRecord.getStatus())){
+                inviteApplyRecord.setStatus(status);
+                inviteApplyRecord = baseFacade.merge(inviteApplyRecord);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new Exception("操作异常，请联系管理员");
+        }
+        return Response.status(Response.Status.OK).entity(inviteApplyRecord).build();
+    }
     @GET
     @Path("test-send")
     public List<String> sendNotice(){

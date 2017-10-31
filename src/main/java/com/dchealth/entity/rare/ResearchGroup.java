@@ -13,7 +13,7 @@ public class ResearchGroup {
     private String researchDiseaseId;
     private String groupDesc;
     private String groupInInfo;
-    private String manyHositalFlag;
+    private String manyHospitalFlag;
     private String dataShareLevel;
     private String status;
 
@@ -68,13 +68,13 @@ public class ResearchGroup {
     }
 
     @Basic
-    @Column(name = "many_hosital_flag", nullable = true, length = 2)
-    public String getManyHositalFlag() {
-        return manyHositalFlag;
+    @Column(name = "many_hospital_flag", nullable = true, length = 2)
+    public String getManyHospitalFlag() {
+        return manyHospitalFlag;
     }
 
-    public void setManyHositalFlag(String manyHositalFlag) {
-        this.manyHositalFlag = manyHositalFlag;
+    public void setManyHospitalFlag(String manyHospitalFlag) {
+        this.manyHospitalFlag = manyHospitalFlag;
     }
 
     @Basic
@@ -111,7 +111,7 @@ public class ResearchGroup {
             return false;
         if (groupDesc != null ? !groupDesc.equals(that.groupDesc) : that.groupDesc != null) return false;
         if (groupInInfo != null ? !groupInInfo.equals(that.groupInInfo) : that.groupInInfo != null) return false;
-        if (manyHositalFlag != null ? !manyHositalFlag.equals(that.manyHositalFlag) : that.manyHositalFlag != null)
+        if (manyHospitalFlag != null ? !manyHospitalFlag.equals(that.manyHospitalFlag) : that.manyHospitalFlag != null)
             return false;
         if (dataShareLevel != null ? !dataShareLevel.equals(that.dataShareLevel) : that.dataShareLevel != null)
             return false;
@@ -127,7 +127,7 @@ public class ResearchGroup {
         result = 31 * result + (researchDiseaseId != null ? researchDiseaseId.hashCode() : 0);
         result = 31 * result + (groupDesc != null ? groupDesc.hashCode() : 0);
         result = 31 * result + (groupInInfo != null ? groupInInfo.hashCode() : 0);
-        result = 31 * result + (manyHositalFlag != null ? manyHositalFlag.hashCode() : 0);
+        result = 31 * result + (manyHospitalFlag != null ? manyHospitalFlag.hashCode() : 0);
         result = 31 * result + (dataShareLevel != null ? dataShareLevel.hashCode() : 0);
         result = 31 * result + (status != null ? status.hashCode() : 0);
         return result;
