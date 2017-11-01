@@ -1,5 +1,7 @@
 package com.dchealth.entity.rare;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 import java.util.Date;
 
@@ -16,8 +18,10 @@ public class InviteApplyRecord {
     private String status;
     private Date createDate;
 
+    @Column(name = "id")
     @Id
-    @Column(name = "id", nullable = false, length = 64)
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
     public String getId() {
         return id;
     }

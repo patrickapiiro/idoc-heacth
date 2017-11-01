@@ -18,6 +18,9 @@ public class ResearchGroupVo {
     private String dataShareLevel;
     private String status;
 
+    public ResearchGroupVo() {
+    }
+
     public ResearchGroupVo(String id, String researchGroupName, String researchDiseaseId, String groupDesc, String groupInInfo, String manyHospitalFlag, String dataShareLevel, String status) {
         this.id = id;
         this.researchGroupName = researchGroupName;
@@ -25,6 +28,18 @@ public class ResearchGroupVo {
         this.groupDesc = groupDesc;
         this.groupInInfo = groupInInfo;
         this.manyHospitalFlag = manyHospitalFlag;
+        this.dataShareLevel = dataShareLevel;
+        this.status = status;
+    }
+
+    public ResearchGroupVo(String id, String researchGroupName, String researchDiseaseId, String groupDesc, String groupInInfo, String manyHospitalFlag, List<HospitalDict> hospitals, String dataShareLevel, String status) {
+        this.id = id;
+        this.researchGroupName = researchGroupName;
+        this.researchDiseaseId = researchDiseaseId;
+        this.groupDesc = groupDesc;
+        this.groupInInfo = groupInInfo;
+        this.manyHospitalFlag = manyHospitalFlag;
+        this.hospitals = hospitals;
         this.dataShareLevel = dataShareLevel;
         this.status = status;
     }

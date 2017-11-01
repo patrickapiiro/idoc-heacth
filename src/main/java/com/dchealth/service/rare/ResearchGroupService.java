@@ -18,9 +18,9 @@ import com.dchealth.util.UserUtils;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.TypedQuery;
-import javax.transaction.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.util.*;
@@ -50,6 +50,11 @@ public class ResearchGroupService {
             baseFacade.excHql(delHospitalHql);
             String delUser = "delete from ResearchGroupVsUser where groupId = '"+researchGroupVo.getId()+"'";
             baseFacade.excHql(delUser);
+            ResearchGroup researchGroup = baseFacade.get(ResearchGroup.class,researchGroupVo.getId());
+            //researchGroup.setStatus(researchGroupVo.getStatus());
+            researchGroup.setStatus(researchGroupVo.getStatus());
+            ResearchGroup merge = baseFacade.merge(researchGroup);
+            return Response.status(Response.Status.OK).entity(merge).build();
         }
         if(StringUtils.isEmpty(researchGroupVo.getId())){
             ResearchGroup researchGroup = new ResearchGroup();
@@ -59,7 +64,8 @@ public class ResearchGroupService {
             researchGroup.setManyHospitalFlag(researchGroupVo.getManyHospitalFlag());
             researchGroup.setResearchDiseaseId(researchGroupVo.getResearchDiseaseId());
             researchGroup.setResearchGroupName(researchGroupVo.getResearchGroupName());
-            researchGroup.setStatus(researchGroupVo.getStatus());
+            //researchGroup.setStatus(researchGroupVo.getStatus());
+            researchGroup.setStatus("0");
             ResearchGroup merge = baseFacade.merge(researchGroup);
             if(researchGroupVo.getHospitals()!=null && !researchGroupVo.getHospitals().isEmpty()){
                 for(HospitalDict hospitalDict:researchGroupVo.getHospitals()){
@@ -77,8 +83,27 @@ public class ResearchGroupService {
             researchGroupVsUser.setGroupId(merge.getId());
             baseFacade.merge(researchGroupVsUser);
             return Response.status(Response.Status.OK).entity(merge).build();
+        }else{
+            String delHospitalHql = " delete from ResearchGroupVsHospital where groupId = '"+researchGroupVo.getId()+"'";
+            baseFacade.excHql(delHospitalHql);
+            ResearchGroup researchGroup = baseFacade.get(ResearchGroup.class,researchGroupVo.getId());
+            researchGroup.setDataShareLevel(researchGroupVo.getDataShareLevel());
+            researchGroup.setGroupDesc(researchGroupVo.getGroupDesc());
+            researchGroup.setGroupInInfo(researchGroupVo.getGroupInInfo());
+            researchGroup.setManyHospitalFlag(researchGroupVo.getManyHospitalFlag());
+            researchGroup.setResearchDiseaseId(researchGroupVo.getResearchDiseaseId());
+            researchGroup.setResearchGroupName(researchGroupVo.getResearchGroupName());
+            ResearchGroup merge = baseFacade.merge(researchGroup);
+            if(researchGroupVo.getHospitals()!=null && !researchGroupVo.getHospitals().isEmpty()){
+                for(HospitalDict hospitalDict:researchGroupVo.getHospitals()){
+                    ResearchGroupVsHospital researchGroupVsHospital = new ResearchGroupVsHospital();
+                    researchGroupVsHospital.setGroupId(merge.getId());
+                    researchGroupVsHospital.setHospitalId(hospitalDict.getId());
+                    ResearchGroupVsHospital mergeHospital = baseFacade.merge(researchGroupVsHospital);
+                }
+            }
+            return Response.status(Response.Status.OK).entity(merge).build();
         }
-        return Response.status(Response.Status.OK).entity(baseFacade.merge(researchGroupVo)).build();
     }
 
     /**
@@ -107,10 +132,14 @@ public class ResearchGroupService {
         if(!StringUtils.isEmpty(userId) && !StringUtils.isEmpty(userType)){
             if("0".equals(userType)){//userType=0表示查询出该用户创建的科研项目
                 hql += " and exists(select 1 from ResearchGroupVsUser where groupId = r.id and userId = '"+userId+"' and createrFlag = '1')";
-            }else if("1".equals(userType)){
+            }else if("1".equals(userType)){//该用户参与的群组
                 hql += " and exists(select 1 from ResearchGroupVsUser where groupId = r.id and userId = '"+userId+"' and createrFlag = '0')";
             }else if("2".equals(userType)){//查询出该用户未参加的，切与本医院有关的群组
-                hql += " and not exists(select 1 from ResearchGroupVsUser where groupId = r.id and userId = '"+userId+"') and " +
+                hql += " and not exists(select 1 from InviteApplyRecord where groupId = r.id and status = '1' and userId = '"+userId+"') and " +
+                        " id in (select groupId from ResearchGroupVsHospital where hospitalId = (select h.id from HospitalDict as h,YunUsers as u where " +
+                        " u.hospitalCode = h.hospitalCode and u.id = '"+userId+"'))";
+            }else if("3".equals(userType)){//查询出该用户参加待审核的，切与本医院有关的群组
+                hql += " and not exists(select 1 from InviteApplyRecord where groupId = r.id and status = '0' and userId = '"+userId+"') and " +
                         " id in (select groupId from ResearchGroupVsHospital where hospitalId = (select h.id from HospitalDict as h,YunUsers as u where " +
                         " u.hospitalCode = h.hospitalCode and u.id = '"+userId+"'))";
             }
@@ -129,27 +158,29 @@ public class ResearchGroupService {
             }
         }
         String groupIdsTo = groupIds.toString();
-        groupIdsTo = groupIdsTo.substring(0,groupIdsTo.length()-1);
-        String hospitalSql = "select h.id,h.hospital_name,h.hospital_code,h.status,r.group_id from hospital_dict as h,research_group_vs_hospital as r where h.status<>'-1' and r.hospital_id = h.id and r.group_id in ("+groupIdsTo+")";
-        List list = baseFacade.createNativeQuery(hospitalSql).getResultList();
-        if(list!=null && !list.isEmpty()){
-            int size = list.size();
-            for(int i=0;i<size;i++){
-                Object[] params = (Object[])list.get(i);
-                String groupId = (String)params[4];
-                if(map.get(groupId)!=null){
-                    List<HospitalDict> hospitalDicts = map.get(groupId);
-                    HospitalDict hospitalDict = new HospitalDict();
-                    hospitalDict.setId((String)params[0]);
-                    hospitalDict.setHospitalName((String)params[1]);
-                    hospitalDict.setHospitalCode((String)params[2]);
-                    hospitalDict.setStatus((String)params[3]);
-                    hospitalDicts.add(hospitalDict);
+        if(!StringUtils.isEmpty(groupIdsTo)){
+            groupIdsTo = groupIdsTo.substring(0,groupIdsTo.length()-1);
+            String hospitalSql = "select h.id,h.hospital_name,h.hospital_code,h.status,r.group_id from hospital_dict as h,research_group_vs_hospital as r where h.status<>'-1' and r.hospital_id = h.id and r.group_id in ("+groupIdsTo+")";
+            List list = baseFacade.createNativeQuery(hospitalSql).getResultList();
+            if(list!=null && !list.isEmpty()){
+                int size = list.size();
+                for(int i=0;i<size;i++){
+                    Object[] params = (Object[])list.get(i);
+                    String groupId = (String)params[4];
+                    if(map.get(groupId)!=null){
+                        List<HospitalDict> hospitalDicts = map.get(groupId);
+                        HospitalDict hospitalDict = new HospitalDict();
+                        hospitalDict.setId((String)params[0]);
+                        hospitalDict.setHospitalName((String)params[1]);
+                        hospitalDict.setHospitalCode((String)params[2]);
+                        hospitalDict.setStatus((String)params[3]);
+                        hospitalDicts.add(hospitalDict);
+                    }
                 }
             }
-        }
-        for(ResearchGroupVo researchGroupVo:researchGroupPage.getData()){
-            researchGroupVo.setHospitals(map.get(researchGroupVo.getId()));
+            for(ResearchGroupVo researchGroupVo:researchGroupPage.getData()){
+                researchGroupVo.setHospitals(map.get(researchGroupVo.getId()));
+            }
         }
         return researchGroupPage;
     }
@@ -407,6 +438,14 @@ public class ResearchGroupService {
             if("0".equals(inviteApplyRecord.getStatus())){
                 inviteApplyRecord.setStatus(status);
                 inviteApplyRecord = baseFacade.merge(inviteApplyRecord);
+                if("1".equals(status)){
+                    ResearchGroupVsUser researchGroupVsUser = new ResearchGroupVsUser();
+                    researchGroupVsUser.setLearderFlag("0");
+                    researchGroupVsUser.setCreaterFlag("0");
+                    researchGroupVsUser.setUserId(inviteApplyRecord.getUserId());
+                    researchGroupVsUser.setGroupId(inviteApplyRecord.getGroupId());
+                    baseFacade.merge(researchGroupVsUser);
+                }
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -414,6 +453,21 @@ public class ResearchGroupService {
         }
         return Response.status(Response.Status.OK).entity(inviteApplyRecord).build();
     }
+
+    /**
+     *获取群组下的成员信息
+     * @param groupId 群组id
+     * @param perPage 每页条数
+     * @param currentPage 当前页
+     * @return
+     */
+    @GET
+    @Path("get-research-group-users")
+    public Page<YunUsers> getResearchGroupUsers(@QueryParam("groupId")String groupId,@QueryParam("perPage") int perPage,@QueryParam("currentPage") int currentPage){
+        String hql = "select u from YunUsers as u,ResearchGroupVsUser as v where u.id = v.userId and v.groupId = '"+groupId+"'";
+        return baseFacade.getPageResult(YunUsers.class,hql,perPage,currentPage);
+    }
+
     @GET
     @Path("test-send")
     public List<String> sendNotice(){
