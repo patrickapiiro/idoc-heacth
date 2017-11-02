@@ -14,6 +14,7 @@ import java.util.Date;
 public class YunPatient {
     private String id;
     private String doctorId;
+    private String owerId;
     private String deptId;
     private String pid;
     private String mid;
@@ -52,6 +53,16 @@ public class YunPatient {
 
     public void setDoctorId(String doctorId) {
         this.doctorId = doctorId;
+    }
+
+    @Basic
+    @Column(name = "ower_id")
+    public String getOwerId() {
+        return owerId;
+    }
+
+    public void setOwerId(String owerId) {
+        this.owerId = owerId;
     }
 
     @Basic
@@ -245,6 +256,7 @@ public class YunPatient {
 
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
         if (doctorId != null ? !doctorId.equals(that.doctorId) : that.doctorId != null) return false;
+        if (owerId != null ? !owerId.equals(that.owerId) : that.owerId != null) return false;
         if (deptId != null ? !deptId.equals(that.deptId) : that.deptId != null) return false;
         if (pid != null ? !pid.equals(that.pid) : that.pid != null) return false;
         if (mid != null ? !mid.equals(that.mid) : that.mid != null) return false;
@@ -270,6 +282,7 @@ public class YunPatient {
     public int hashCode() {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (doctorId != null ? doctorId.hashCode() : 0);
+        result = 31 * result + (owerId != null ? owerId.hashCode() : 0);
         result = 31 * result + (deptId != null ? deptId.hashCode() : 0);
         result = 31 * result + (pid != null ? pid.hashCode() : 0);
         result = 31 * result + (mid != null ? mid.hashCode() : 0);

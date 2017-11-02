@@ -10,6 +10,7 @@ import com.dchealth.entity.rare.YunFolder;
 import com.dchealth.entity.rare.YunFollowUp;
 import com.dchealth.entity.rare.YunPatient;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.util.GroupQuerySqlUtil;
 import com.dchealth.util.SmsSendUtil;
 import com.dchealth.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,8 +56,14 @@ public class PatientService {
             hqlCount +=" and f.diagnosisCode='"+dcode+"'" ;
         }
         if(!"".equals(doctorId)&&null!=doctorId){
-            hql+=" and p.doctorId = '"+doctorId+"'" ;
-            hqlCount+=" and p.doctorId = '"+doctorId+"'" ;
+            String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
+            if(StringUtils.isEmpty(userIds)){
+                hql+=" and p.doctorId = '"+doctorId+"'" ;
+                hqlCount+=" and p.doctorId = '"+doctorId+"'" ;
+            }else{
+                hql+=" and p.doctorId in ("+userIds+")" ;
+                hqlCount+=" and p.doctorId in ("+userIds+")" ;
+            }
         }
         if(!"".equals(nc)&&null!=nc){
             hql+=" and p.nc = '"+nc+"'" ;
@@ -89,7 +96,6 @@ public class PatientService {
         return patientPage;
     }
 
-
     /**
      * 获取随诊病人列表
      * @param doctorId 医生ID信息
@@ -113,8 +119,14 @@ public class PatientService {
         String hqlCount = "select count(p) from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId" ;
         String pfHql = "select new com.dchealth.VO.PatientFollowUpVo(p.id,p.doctorId,p.deptId,p.pid,p.mid,p.nc,p.ne,p.sx,p.br,p.lxfs,p.tel1,p.tel2,p.yzbm,p.email,p.createDate, yf.id, yf.title, yf.dcode, yf.followDate, yf.remindDate) from YunPatient as p ,YunFollowUp as yf where p.id=yf.patientId";
         if(!"".equals(doctorId)&null!=doctorId){
-            pfHql += " and p.doctorId='"+doctorId+"'" ;
-            hqlCount += " and p.doctorId='"+doctorId+"'" ;
+            String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
+            if(StringUtils.isEmpty(userIds)){
+                pfHql += " and p.doctorId='"+doctorId+"'" ;
+                hqlCount += " and p.doctorId='"+doctorId+"'" ;
+            }else{
+                pfHql += " and p.doctorId in ("+userIds+")" ;
+                hqlCount += " and p.doctorId in ("+userIds+")" ;
+            }
         }
         if(!"".equals(followDateBegin)&null!=followDateBegin){
             pfHql +=" and to_days(yf.followDate)>=to_days('"+followDateBegin+"')" ;

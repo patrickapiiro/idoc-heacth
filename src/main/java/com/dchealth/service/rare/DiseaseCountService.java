@@ -6,6 +6,8 @@ import com.dchealth.VO.DiseaseStatisVo;
 import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.util.GroupQuerySqlUtil;
+import com.dchealth.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -38,11 +40,16 @@ public class DiseaseCountService {
         List<DiseaseStatisVo> diseaseStatisVos = new ArrayList<>();
         //首先查询是否有管理病历信息
        //Set<String> diseaseSet =  getManageDisease(doctorId);
-       String  diseasHql = "select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
-                    "and yud.userId='"+doctorId+"'" ;
+       String  diseasHql = "select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode ";
+       String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
+       if(StringUtils.isEmpty(userIds)){
+           diseasHql += " and yud.userId='"+doctorId+"'";
+       }else{
+           diseasHql += " and yud.userId  in ("+doctorId+")";
+       }
        List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class,diseasHql,new ArrayList<Object>()).getResultList();
-        Map<String,Long>  discussMap = getPatNumberByType(doctorId,"0");//
-        Map<String,Long>  manageMap = getPatNumberByType(doctorId,"1");//
+        Map<String,Long>  discussMap = getPatNumberByType(doctorId,userIds,"0");//
+        Map<String,Long>  manageMap = getPatNumberByType(doctorId,userIds,"1");//
         discussMap.putAll(manageMap);
        for(YunDiseaseList yunDiseaseList:yunDiseaseLists){
             DiseaseStatisVo diseaseStatisVo = new DiseaseStatisVo();
@@ -63,13 +70,21 @@ public class DiseaseCountService {
         return Response.status(Response.Status.OK).entity(diseaseStatisVos).build();
     }
 
-    public Map<String,Long> getPatNumberByType(String doctorId,String type){
+    public Map<String,Long> getPatNumberByType(String doctorId,String userIds,String type){
         Map<String,Long> retMap = new HashMap<String,Long>();
         String sql ="SELECT count(*) CT,f.diagnosis_code,DATE_FORMAT(f.create_date,'%Y-%m') from yun_patient p,yun_folder f where p.id = f.patient_id ";
         if("0".equals(type)){
-            sql +=" and p.doctor_id = '"+doctorId+"' ";
+            if(StringUtils.isEmpty(userIds)){
+                sql +=" and p.doctor_id = '"+doctorId+"' ";
+            }else{
+                sql +=" and p.doctor_id in ("+userIds+") ";
+            }
         }else if("1".equals(type)){
-            sql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = f.diagnosis_code and ym.user_id = '"+doctorId+"')";
+            if(StringUtils.isEmpty(userIds)){
+                sql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = f.diagnosis_code and ym.user_id = '"+doctorId+"')";
+            }else{
+                sql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = f.diagnosis_code and ym.user_id in ("+userIds+"))";
+            }
         }
         sql += " and f.create_date BETWEEN date_sub(date_sub(date_format(now(),'%y-%m-%d 00:00:00'),interval extract( day from now())-1 day),interval 5 month) and NOW() " +
                 " GROUP BY f.diagnosis_code,DATE_FORMAT(f.create_date,'%Y-%m')";

@@ -4,10 +4,7 @@ import com.dchealth.VO.*;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.*;
 import com.dchealth.facade.common.BaseFacade;
-import com.dchealth.util.IDUtils;
-import com.dchealth.util.JSONUtil;
-import com.dchealth.util.StringUtils;
-import com.dchealth.util.UserUtils;
+import com.dchealth.util.*;
 import org.codehaus.jettison.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -362,7 +359,10 @@ public class WorkFlowService {
             Date date = simpleDateFormat.parse(postPara.getBr());
             patient.setBr(new Timestamp(date.getTime()));
         }
-
+        String owerId = getOwerId(yunUsers,baseFacade);
+        if(!StringUtils.isEmpty(owerId)){
+            patient.setOwerId(owerId);
+        }
         patient.setDoctorId(yunUsers.getId());
         patient.setDeptId(yunUsers.getDeptId());
         patient.setEmail(postPara.getEmail());
@@ -377,7 +377,22 @@ public class WorkFlowService {
         return patient = baseFacade.merge(patient);
     }
 
-
+    /**
+     * 根据用户信息判断其是否是管理助手 如果是管理助手查询其导师及拥有这
+     * @param yunUsers
+     * @param baseFacade
+     * @return
+     */
+    public String getOwerId(YunUsers yunUsers,BaseFacade baseFacade){
+        String owerId = "";
+        if("DOCTOR_ASSISTANT".equals(yunUsers.getRolename())){
+            List list = GroupQuerySqlUtil.getResearchAssistantSql(yunUsers.getId(),"1",baseFacade);
+            if(list!=null && !list.isEmpty()){
+                owerId = list.get(0)+"";
+            }
+        }
+        return owerId;
+    }
     /**
      * 获取新增病人随访或者表单内容
      * @param pubFlag 0位未发布的私有数据，1位发布的数据

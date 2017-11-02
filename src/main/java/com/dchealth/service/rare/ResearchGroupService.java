@@ -259,6 +259,35 @@ public class ResearchGroupService {
     }
 
     /**
+     * 邀请一个人人员入组
+     * @param groupId
+     * @param userIds 用户id
+     * @return
+     */
+    @POST
+    @Path("invite-research-users")
+    @Transactional
+    public Response inviteResearchUser(@QueryParam("groupId")String groupId,List<String> userIds) throws Exception{
+        List<InviteApplyRecord> inviteApplyRecords = new ArrayList<>();
+        if(StringUtils.isEmpty(groupId)){
+            throw new Exception("群组id不能为空");
+        }
+        if(userIds==null || userIds.isEmpty()){
+            throw new Exception("用户id不能为空");
+        }
+        for(String userId:userIds){
+            InviteApplyRecord inviteApplyRecord = new InviteApplyRecord();
+            inviteApplyRecord.setGroupId(groupId);
+            inviteApplyRecord.setUserId(userId);
+            inviteApplyRecord.setFlag("1");
+            inviteApplyRecord.setStatus("0");
+            inviteApplyRecord.setCreateDate(new Date());
+            InviteApplyRecord merge = baseFacade.merge(inviteApplyRecord);
+            inviteApplyRecords.add(merge);
+        }
+        return Response.status(Response.Status.OK).entity(inviteApplyRecords).build();
+    }
+    /**
      * 申请一个群组加入
      * @param groupId
      * @param userId

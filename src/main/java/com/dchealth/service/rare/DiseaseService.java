@@ -4,6 +4,8 @@ import com.dchealth.VO.DiseasePatInfo;
 import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.util.GroupQuerySqlUtil;
+import com.dchealth.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Controller;
@@ -98,15 +100,20 @@ public class DiseaseService {
     public List<DiseasePatInfo> listDiseasePatInfo(@QueryParam("doctorId") String doctorId){
         List<DiseasePatInfo> diseasePatInfos = new ArrayList<>() ;
         Set<String> diseaseSet = getManageDisease(doctorId);
-        String hql="select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode "+
-                    " and yud.userId='"+doctorId+"'" ;
+        String hql="select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode ";
+        String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
+        if(!StringUtils.isEmpty(userIds)){//大于0说明该用户有创建的群组 或者 参加的群组级别为A
+            hql += " and yud.userId in ("+userIds+")";
+        }else {
+            hql += " and yud.userId = '"+doctorId+"'" ;
+        }
         List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class, hql, new ArrayList<Object>()).getResultList();
-        Map<String,Long>  discussPatMap = getPatNumberByType(doctorId,"0");//
-        Map<String,Long>  managePatMap = getPatNumberByType(doctorId,"1");//
+        Map<String,Long>  discussPatMap = getPatNumberByType(doctorId,userIds,"0");//
+        Map<String,Long>  managePatMap = getPatNumberByType(doctorId,userIds,"1");//
         discussPatMap.putAll(managePatMap);
 
-        Map<String,Long>  discussfollowMap = getFollowNumberByType(doctorId,"0");//
-        Map<String,Long>  managefollowMap = getFollowNumberByType(doctorId,"1");//
+        Map<String,Long>  discussfollowMap = getFollowNumberByType(doctorId,userIds,"0");//
+        Map<String,Long>  managefollowMap = getFollowNumberByType(doctorId,userIds,"1");//
         discussfollowMap.putAll(managefollowMap);
         for(YunDiseaseList list:yunDiseaseLists){
             DiseasePatInfo diseasePatInfo = new DiseasePatInfo(list,Long.parseLong("0"),Long.parseLong("0"));
@@ -118,13 +125,22 @@ public class DiseaseService {
         return diseasePatInfos;
     }
 
-    public Map<String,Long> getPatNumberByType(String doctorId,String type){
+
+    public Map<String,Long> getPatNumberByType(String doctorId,String userIds,String type){
         Map<String,Long> retMap = new HashMap<String,Long>();
         String hql = "select count(*) as ct,yf.diagnosis_code from yun_folder as yf ,yun_patient as yp where yf.patient_id=yp.id";
         if("0".equals(type)){//
-            hql += " and yp.doctor_id = '"+doctorId+"'";
+            if(StringUtils.isEmpty(userIds)){
+                hql += " and yp.doctor_id = '"+doctorId+"'";
+            }else{
+                hql += " and yp.doctor_id in ("+userIds+")";
+            }
         }else if("1".equals(type)){
-            hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = yf.diagnosis_code and ym.user_id = '"+doctorId+"')";
+            if(StringUtils.isEmpty(userIds)){
+                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = yf.diagnosis_code and ym.user_id = '"+doctorId+"')";
+            }else {
+                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = yf.diagnosis_code and ym.user_id in ("+userIds+"))";
+            }
         }
         hql +=" group by yf.diagnosis_code";
         List list = baseFacade.createNativeQuery(hql).getResultList();
@@ -138,14 +154,22 @@ public class DiseaseService {
         return retMap;
     }
 
-    public Map<String,Long> getFollowNumberByType(String doctorId,String type){
+    public Map<String,Long> getFollowNumberByType(String doctorId,String inSql,String type){
         Map<String,Long> retMap = new HashMap<String,Long>();
         String hql = "select count(*) CT,F.DCODE from yun_follow_up as f,yun_patient as p  where YEAR(f.follow_date)=YEAR(current_date()) " +
                      "and MONTH(f.follow_date)=MONTH(current_date()) and f.hstatus='R' and f.patient_id=p.id ";
         if("0".equals(type)){//
-            hql += " and p.doctor_id = '"+doctorId+"'";
+            if(StringUtils.isEmpty(inSql)){
+                hql += " and p.doctor_id = '"+doctorId+"'";
+            }else{
+                hql += " and p.doctor_id in ("+inSql+")";
+            }
         }else if("1".equals(type)){
-            hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = F.dcode and ym.user_id = '"+doctorId+"')";
+            if(StringUtils.isEmpty(inSql)){
+                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = F.dcode and ym.user_id = '"+doctorId+"')";
+            }else{
+                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = F.dcode and ym.user_id in ("+inSql+"))";
+            }
         }
         hql +=" GROUP BY F.dcode";
         List list = baseFacade.createNativeQuery(hql).getResultList();
