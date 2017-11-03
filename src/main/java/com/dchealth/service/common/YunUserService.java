@@ -299,8 +299,11 @@ public class YunUserService {
         Page<YunUsers> yunUsersPage = new Page<>();
         Long counts = userFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
         yunUsersPage.setCounts(counts);
+        if(currentPage<=0){
+            currentPage = 1;
+        }
         if(perPage>0){
-            query.setFirstResult(currentPage*perPage) ;
+            query.setFirstResult((currentPage-1)*perPage) ;
             query.setMaxResults(perPage);
             yunUsersPage.setPerPage((long) perPage);
 

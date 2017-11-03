@@ -118,8 +118,8 @@ public class DiseaseService {
         for(YunDiseaseList list:yunDiseaseLists){
             DiseasePatInfo diseasePatInfo = new DiseasePatInfo(list,Long.parseLong("0"),Long.parseLong("0"));
             //Long patNumber = getPatNumber(doctorId, list.getDcode(),diseaseSet);
-            diseasePatInfo.setPatNumber(discussPatMap.get(list.getDcode()));
-            diseasePatInfo.setFollowNumber(discussfollowMap.get(list.getDcode()));//getPatFollowUp(doctorId,list.getDcode(),diseaseSet)
+            diseasePatInfo.setPatNumber(discussPatMap.get(list.getDcode())==null?0:discussPatMap.get(list.getDcode()));
+            diseasePatInfo.setFollowNumber(discussfollowMap.get(list.getDcode())==null?0:discussfollowMap.get(list.getDcode()));//getPatFollowUp(doctorId,list.getDcode(),diseaseSet)
             diseasePatInfos.add(diseasePatInfo);
         }
         return diseasePatInfos;

@@ -3,7 +3,9 @@ package com.dchealth.util;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.common.BaseFacade;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Administrator on 2017/11/1.
@@ -26,9 +28,13 @@ public class GroupQuerySqlUtil {
         if(ctlist==null || ctlist.isEmpty()){
             return "";
         }
+        Set set = new HashSet();
+        for(int k=0;k<ctlist.size();k++){
+            set.add(ctlist.get(k));
+        }
         StringBuffer ids = new StringBuffer("");
-        for(int i=0;i<ctlist.size();i++){
-            ids.append("'").append(ctlist.get(i)).append("',");
+        for(Object obj:set){
+            ids.append("'").append(obj).append("',");
         }
         String userIds = ids.toString();
         userIds = userIds.substring(0,userIds.length()-1);
@@ -53,7 +59,7 @@ public class GroupQuerySqlUtil {
         String userIds = "";
         try {
             YunUsers yunUsers = UserUtils.getYunUsers();
-            if("DOCTOR_ASSISTANT".equals(yunUsers.getRolename())){//如果是研究助手 查看自己录入的和导师录入的病历
+            if(yunUsers.getRolename()!=null && yunUsers.getRolename().equals(SmsSendUtil.getStringByKey("roleCode"))){//如果是研究助手 查看自己录入的和导师录入的病历
                 List assistantList = getResearchAssistantSql(doctorId,"1",baseFacade);
                 if(assistantList!=null && !assistantList.isEmpty()){
                     userIds = "'"+assistantList.get(0)+"','"+doctorId+"'";

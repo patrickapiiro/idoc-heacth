@@ -385,7 +385,7 @@ public class WorkFlowService {
      */
     public String getOwerId(YunUsers yunUsers,BaseFacade baseFacade){
         String owerId = "";
-        if("DOCTOR_ASSISTANT".equals(yunUsers.getRolename())){
+        if(yunUsers.getRolename()!=null && yunUsers.getRolename().equals(SmsSendUtil.getStringByKey("roleCode"))){
             List list = GroupQuerySqlUtil.getResearchAssistantSql(yunUsers.getId(),"1",baseFacade);
             if(list!=null && !list.isEmpty()){
                 owerId = list.get(0)+"";

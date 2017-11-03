@@ -57,6 +57,7 @@ public class ResearchGroupService {
             return Response.status(Response.Status.OK).entity(merge).build();
         }
         if(StringUtils.isEmpty(researchGroupVo.getId())){
+            YunUsers yunUsers = UserUtils.getYunUsers();
             ResearchGroup researchGroup = new ResearchGroup();
             researchGroup.setDataShareLevel(researchGroupVo.getDataShareLevel());
             researchGroup.setGroupDesc(researchGroupVo.getGroupDesc());
@@ -67,15 +68,28 @@ public class ResearchGroupService {
             //researchGroup.setStatus(researchGroupVo.getStatus());
             researchGroup.setStatus("0");
             ResearchGroup merge = baseFacade.merge(researchGroup);
-            if(researchGroupVo.getHospitals()!=null && !researchGroupVo.getHospitals().isEmpty()){
-                for(HospitalDict hospitalDict:researchGroupVo.getHospitals()){
+            List<HospitalDict> hospitalDicts = null;
+            if("0".equals(researchGroupVo.getManyHospitalFlag())){//单中心医院默认是自己的医院
+                hospitalDicts = getHospitalDictByCode(yunUsers.getHospitalCode());
+            }else{//多中心医院获取页面传的医院信息
+                hospitalDicts = researchGroupVo.getHospitals();
+                List<HospitalDict> myHospitalDict = getHospitalDictByCode(yunUsers.getHospitalCode());
+                if(hospitalDicts!=null){
+                    if(myHospitalDict!=null){
+                        hospitalDicts = getNonRepeatHospitals(hospitalDicts,myHospitalDict);
+                    }
+                }else{
+                    throw new Exception("多中心医院选择不能为空");
+                }
+            }
+            if(hospitalDicts!=null && !hospitalDicts.isEmpty()){
+                for(HospitalDict hospitalDict:hospitalDicts){
                     ResearchGroupVsHospital researchGroupVsHospital = new ResearchGroupVsHospital();
                     researchGroupVsHospital.setGroupId(merge.getId());
                     researchGroupVsHospital.setHospitalId(hospitalDict.getId());
                     ResearchGroupVsHospital mergeHospital = baseFacade.merge(researchGroupVsHospital);
                 }
             }
-            YunUsers yunUsers = UserUtils.getYunUsers();
             ResearchGroupVsUser researchGroupVsUser = new ResearchGroupVsUser();
             researchGroupVsUser.setLearderFlag("1");
             researchGroupVsUser.setCreaterFlag("1");
@@ -84,6 +98,7 @@ public class ResearchGroupService {
             baseFacade.merge(researchGroupVsUser);
             return Response.status(Response.Status.OK).entity(merge).build();
         }else{
+            YunUsers yunUsers = UserUtils.getYunUsers();
             String delHospitalHql = " delete from ResearchGroupVsHospital where groupId = '"+researchGroupVo.getId()+"'";
             baseFacade.excHql(delHospitalHql);
             ResearchGroup researchGroup = baseFacade.get(ResearchGroup.class,researchGroupVo.getId());
@@ -94,8 +109,19 @@ public class ResearchGroupService {
             researchGroup.setResearchDiseaseId(researchGroupVo.getResearchDiseaseId());
             researchGroup.setResearchGroupName(researchGroupVo.getResearchGroupName());
             ResearchGroup merge = baseFacade.merge(researchGroup);
-            if(researchGroupVo.getHospitals()!=null && !researchGroupVo.getHospitals().isEmpty()){
-                for(HospitalDict hospitalDict:researchGroupVo.getHospitals()){
+            List<HospitalDict> hospitalDicts = null;
+            List<HospitalDict> myHospitalDict = getHospitalDictByCode(yunUsers.getHospitalCode());
+            if("0".equals(researchGroupVo.getManyHospitalFlag())){//修改为单中心医院
+                hospitalDicts = myHospitalDict;
+            }else{
+                if(researchGroupVo.getHospitals()!=null && !researchGroupVo.getHospitals().isEmpty()){
+                    hospitalDicts = getNonRepeatHospitals(researchGroupVo.getHospitals(),myHospitalDict);
+                }else{
+                    hospitalDicts = myHospitalDict;
+                }
+            }
+            if(hospitalDicts!=null && !hospitalDicts.isEmpty()){
+                for(HospitalDict hospitalDict:hospitalDicts){
                     ResearchGroupVsHospital researchGroupVsHospital = new ResearchGroupVsHospital();
                     researchGroupVsHospital.setGroupId(merge.getId());
                     researchGroupVsHospital.setHospitalId(hospitalDict.getId());
@@ -104,6 +130,39 @@ public class ResearchGroupService {
             }
             return Response.status(Response.Status.OK).entity(merge).build();
         }
+    }
+
+    /**
+     * 获取不重复的医院信息
+     * @param hospitalDicts
+     * @param myHospitalDict
+     * @return
+     */
+    private List<HospitalDict> getNonRepeatHospitals(List<HospitalDict> hospitalDicts, List<HospitalDict> myHospitalDict) {
+        HospitalDict hospitalDict = null;
+        Boolean isHave = false;
+        if(myHospitalDict!=null && !myHospitalDict.isEmpty()){
+            hospitalDict = myHospitalDict.get(0);
+            for(HospitalDict hospitalDict1:hospitalDicts){
+                if(hospitalDict1.getId().equals(hospitalDict.getId())){
+                    isHave = true;
+                }
+            }
+        }
+        if(!isHave && hospitalDict!=null){
+            hospitalDicts.add(hospitalDict);
+        }
+        return hospitalDicts;
+    }
+
+    /**
+     * 根据医院编码查询医院信息
+     * @param hospitalCode
+     * @return
+     */
+    private List<HospitalDict> getHospitalDictByCode(String hospitalCode) {
+        String hql = " from HospitalDict where hospitalCode = '"+hospitalCode+"'";
+        return baseFacade.createQuery(HospitalDict.class,hql,new ArrayList<Object>()).getResultList();
     }
 
     /**
@@ -135,11 +194,11 @@ public class ResearchGroupService {
             }else if("1".equals(userType)){//该用户参与的群组
                 hql += " and exists(select 1 from ResearchGroupVsUser where groupId = r.id and userId = '"+userId+"' and createrFlag = '0')";
             }else if("2".equals(userType)){//查询出该用户未参加的，切与本医院有关的群组
-                hql += " and not exists(select 1 from InviteApplyRecord where groupId = r.id and status = '1' and userId = '"+userId+"') and " +
+                hql += " and not exists(select 1 from ResearchGroupVsUser where groupId = r.id  and userId = '"+userId+"') and " +
                         " id in (select groupId from ResearchGroupVsHospital where hospitalId = (select h.id from HospitalDict as h,YunUsers as u where " +
-                        " u.hospitalCode = h.hospitalCode and u.id = '"+userId+"'))";
+                        " u.hospitalCode = h.hospitalCode and u.id = '"+userId+"'))";//to_do
             }else if("3".equals(userType)){//查询出该用户参加待审核的，切与本医院有关的群组
-                hql += " and not exists(select 1 from InviteApplyRecord where groupId = r.id and status = '0' and userId = '"+userId+"') and " +
+                hql += " and exists(select 1 from InviteApplyRecord where groupId = r.id and status = '0' and flag ='0' and userId = '"+userId+"') and " +
                         " id in (select groupId from ResearchGroupVsHospital where hospitalId = (select h.id from HospitalDict as h,YunUsers as u where " +
                         " u.hospitalCode = h.hospitalCode and u.id = '"+userId+"'))";
             }
@@ -227,6 +286,9 @@ public class ResearchGroupService {
         }
         String delHql = "delete from ResearchGroupVsUser where groupId = '"+groupId+"' and userId = '"+userId+"'";
         baseFacade.excHql(delHql);
+        //异常群组成员时更新申请记录为已移除
+        String upHql = "update InviteApplyRecord set status = '2' where groupId = '"+groupId+"' and userId = '"+userId+"'";
+        baseFacade.excHql(upHql);
         List<String> resultList = new ArrayList<>();
         resultList.add(groupId);
         return Response.status(Response.Status.OK).entity(resultList).build();
@@ -247,6 +309,12 @@ public class ResearchGroupService {
         }
         if(StringUtils.isEmpty(userId)){
             throw new Exception("用户id不能为空");
+        }
+        String hql = "select userId from InviteApplyRecord where groupId = '"+groupId+"' and userId = '"+userId+"' and flag = '1'" +
+                " and status = '0'";
+        List list = baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
+        if(list!=null && !list.isEmpty()){
+            throw new Exception("该用户已邀请，请勿重复邀请");
         }
         InviteApplyRecord inviteApplyRecord = new InviteApplyRecord();
         inviteApplyRecord.setGroupId(groupId);
@@ -344,6 +412,7 @@ public class ResearchGroupService {
      * 登录用户查看自己创建的组已邀请人员信息
      * @param userID 用户id 对应id 非userId
      * @param status 0表示待处理、1表示邀请人同意 -1表示拒绝
+     * @param groupId   群组id
      * @param perPage 每页条数
      * @param currentPage 当前页
      *                    flag    1表示邀请   0表示申请
@@ -351,15 +420,16 @@ public class ResearchGroupService {
      */
     @GET
     @Path("get-already-invite-users")
-    public Page<InviteUserVo> getInviteUsers(@QueryParam("userID")String userID,@QueryParam("status")String status,
+    public Page<InviteUserVo> getInviteUsers(@QueryParam("userID")String userID,@QueryParam("status")String status,@QueryParam("groupId")String groupId,
                                          @QueryParam("perPage") int perPage,@QueryParam("currentPage") int currentPage){
-        return getInviteOrApplyUserVos(userID,status,"1",perPage,currentPage);
+        return getInviteOrApplyUserVos(userID,status,"1",groupId,perPage,currentPage);
     }
 
     /**
      *根据用户id获取用户创建组申请人员信息
      * @param userID 用户id 对应id 非userId
      * @param status 0表示待处理、1表示邀请人同意 -1表示拒绝
+     * @param groupId  群组id
      * @param perPage 每页条数
      * @param currentPage 当前页
      *                    flag    1表示邀请   0表示申请
@@ -367,32 +437,34 @@ public class ResearchGroupService {
      */
     @GET
     @Path("get-already-apply-users")
-    public Page<InviteUserVo> getApplyUsers(@QueryParam("userID")String userID,@QueryParam("status")String status,
+    public Page<InviteUserVo> getApplyUsers(@QueryParam("userID")String userID,@QueryParam("status")String status,@QueryParam("groupId") String groupId,
                                              @QueryParam("perPage") int perPage,@QueryParam("currentPage") int currentPage){
-        return getInviteOrApplyUserVos(userID,status,"0",perPage,currentPage);
+        return getInviteOrApplyUserVos(userID,status,"0",groupId,perPage,currentPage);
     }
     /**
      *根据flag值判断是邀请或者申请，如果是邀请 获取当前用户邀请人员信息，如果为申请获取该用户创建组的申请人员信息
      * @param userID 用户id 对应id 非userId
      * @param status 0表示待处理、1表示邀请人同意 -1表示拒绝
      * @param flag 1表示邀请   0表示申请
+     * @param groupId 群组id
      * @param perPage 每页条数
      * @param currentPage 当前页
      * @return
      */
-    public Page<InviteUserVo> getInviteOrApplyUserVos(String userID,String status,String flag,int perPage,int currentPage){
+    public Page<InviteUserVo> getInviteOrApplyUserVos(String userID,String status,String flag,String groupId,int perPage,int currentPage){
         String hql = "select new com.dchealth.VO.InviteUserVo(u.id,u.userName,u.sex,u.nation,u.mobile,u.tel,u.email,u.birthDate," +
                 "u.title,u.hospitalName,g.researchGroupName as groupName,(select d.name from YunDiseaseList as d where d.id = g.researchDiseaseId) as diseaseName,p.id as recordId,p.status)" +
                 " from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
                 " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
-                " c.userId = '"+userID+"'";
+                " c.userId = '"+userID+"' and g.id = '"+groupId+"' ";
         String hqlCount = "select count(*) from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
                 " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
-                " c.userId = '"+userID+"'";
+                " c.userId = '"+userID+"' and g.id = '"+groupId+"' ";
         if(!StringUtils.isEmpty(status)){
             hql += " and p.status = '"+status+"'";
             hqlCount += " and p.status = '"+status+"'";
         }
+
         Page<InviteUserVo> resultPage = new Page<>();
         TypedQuery<InviteUserVo> typedQuery = baseFacade.createQuery(InviteUserVo.class,hql,new ArrayList<Object>());
         Long counts =  baseFacade.createQuery(Long.class,hqlCount,new ArrayList<Object>()).getSingleResult();
@@ -424,11 +496,16 @@ public class ResearchGroupService {
         String hql = "select new com.dchealth.VO.InviteUserVo(u.id,u.userName,u.sex,u.nation,u.mobile,u.tel,u.email,u.birthDate," +
                 "u.title,u.hospitalName,g.researchGroupName as groupName,(select d.name from YunDiseaseList as d where d.id = g.researchDiseaseId) as diseaseName,p.id as recordId,p.status)" +
                 " from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
-                " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
-                " c.userId != '"+userID+"' and p.userId = '"+userID+"'";
+                " where g.id = p.groupId and g.id = c.groupId  " ;
         String hqlCount = "select count(*) from YunUsers as u,ResearchGroup as g,InviteApplyRecord as p,ResearchGroupVsUser as c" +
-                " where g.id = p.groupId and g.id = c.groupId and u.id = p.userId and p.flag = '"+flag+"' and " +
-                " c.userId != '"+userID+"' and p.userId = '"+userID+"'";
+                " where g.id = p.groupId and g.id = c.groupId  ";
+        if("1".equals(flag)){//邀请的信息
+            hql += " and u.id = c.userId and p.flag = '"+flag+"' and p.userId = '"+userID+"' and c.createrFlag = '1' ";
+            hqlCount += " and u.id = c.userId and p.flag = '"+flag+"' and p.userId = '"+userID+"' and c.createrFlag = '1' ";
+        }else{
+            hql += " and u.id = p.userId and p.flag = '"+flag+"' and c.userId != '"+userID+"' and p.userId = '"+userID+"' ";
+            hqlCount += " and u.id = p.userId and p.flag = '"+flag+"' and c.userId != '"+userID+"' and p.userId = '"+userID+"' ";
+        }
         if(!StringUtils.isEmpty(status)){
             hql += " and p.status = '"+status+"'";
             hqlCount += " and p.status = '"+status+"'";

@@ -87,8 +87,12 @@ public class PatientService {
         Long count = baseFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
         Page<YunPatient> patientPage= new Page<>();
         patientPage.setCounts(count);
+        patientPage.setPerPage((long)perPage);
+        if(currentPage<=0){
+            currentPage = 1;
+        }
         if(perPage>0){
-            baseFacadeQuery.setFirstResult(currentPage*perPage) ;
+            baseFacadeQuery.setFirstResult((currentPage-1)*perPage) ;
             baseFacadeQuery.setMaxResults(perPage);
         }
         List<YunPatient> yunPatients = baseFacadeQuery.getResultList();
@@ -157,6 +161,10 @@ public class PatientService {
         Long aLong = baseFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
         TypedQuery<PatientFollowUpVo> pfBaseTypedQuery = baseFacade.createQuery(PatientFollowUpVo.class, pfHql, new ArrayList<Object>());
         yunPatientPage.setCounts(aLong);
+        yunPatientPage.setPerPage((long)perPage);
+        if(currentPage<=0){
+            currentPage = 1;
+        }
         if(perPage>0){
             pfBaseTypedQuery.setFirstResult((currentPage-1)*perPage) ;
             pfBaseTypedQuery.setMaxResults(perPage);
