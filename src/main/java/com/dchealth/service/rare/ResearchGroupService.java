@@ -194,8 +194,9 @@ public class ResearchGroupService {
             }else if("1".equals(userType)){//该用户参与的群组
                 hql += " and exists(select 1 from ResearchGroupVsUser where groupId = r.id and userId = '"+userId+"' and createrFlag = '0')";
             }else if("2".equals(userType)){//查询出该用户未参加的，切与本医院有关的群组
-                hql += " and not exists(select 1 from ResearchGroupVsUser where groupId = r.id  and userId = '"+userId+"') and " +
-                        " id in (select groupId from ResearchGroupVsHospital where hospitalId = (select h.id from HospitalDict as h,YunUsers as u where " +
+                hql += " and not exists(select 1 from ResearchGroupVsUser where groupId = r.id  and userId = '"+userId+"') " +
+                        "and not exists(select 1 from InviteApplyRecord where groupId = r.id and status in ('0','1') and flag ='0' and userId = '"+userId+"')" +
+                        " and id in (select groupId from ResearchGroupVsHospital where hospitalId = (select h.id from HospitalDict as h,YunUsers as u where " +
                         " u.hospitalCode = h.hospitalCode and u.id = '"+userId+"'))";//to_do
             }else if("3".equals(userType)){//查询出该用户参加待审核的，切与本医院有关的群组
                 hql += " and exists(select 1 from InviteApplyRecord where groupId = r.id and status = '0' and flag ='0' and userId = '"+userId+"') and " +

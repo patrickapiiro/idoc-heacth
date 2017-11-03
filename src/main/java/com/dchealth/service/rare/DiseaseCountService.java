@@ -44,8 +44,12 @@ public class DiseaseCountService {
        String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
        if(StringUtils.isEmpty(userIds)){
            diseasHql += " and yud.userId='"+doctorId+"'";
+           //diseasHql += " and (yud.userId='"+doctorId+"'";
+           //diseasHql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = ydl.dcode and ym.userId = '"+doctorId+"'))";
        }else{
-           diseasHql += " and yud.userId  in ("+doctorId+")";
+           diseasHql += " and yud.userId  in ("+userIds+")";
+           //diseasHql += " and (yud.userId  in ("+userIds+")";
+           //diseasHql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = ydl.dcode and ym.userId in ("+userIds+")))";
        }
        List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class,diseasHql,new ArrayList<Object>()).getResultList();
         Map<String,Long>  discussMap = getPatNumberByType(doctorId,userIds,"0");//

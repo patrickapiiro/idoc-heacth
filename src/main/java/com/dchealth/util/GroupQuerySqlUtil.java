@@ -3,6 +3,7 @@ package com.dchealth.util;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.common.BaseFacade;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,5 +76,26 @@ public class GroupQuerySqlUtil {
             e.printStackTrace();
         }
         return userIds;
+    }
+
+    /**
+     * 根据医生id获取其管理疾病信息
+     * @param doctorId
+     * @param baseFacade
+     * @return
+     */
+    public static String getManageDiseaseCode(String doctorIds,BaseFacade baseFacade){
+        String manageCodes = "";
+        StringBuffer sb = new StringBuffer("");
+        String hql = "select ym.dcode from YunUserDiseaseManager ym where ym.userId in ("+doctorIds+")";
+        List<String> list = baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
+        if(list!=null && !list.isEmpty()){
+            for(String code:list){
+                sb.append("'").append(code).append("',");
+            }
+            manageCodes = sb.toString();
+            manageCodes = manageCodes.substring(0,manageCodes.length()-1);
+        }
+        return manageCodes;
     }
 }

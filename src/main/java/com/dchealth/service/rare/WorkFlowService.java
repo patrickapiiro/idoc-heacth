@@ -4,6 +4,7 @@ import com.dchealth.VO.*;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.*;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.provider.FolderSaveException;
 import com.dchealth.util.*;
 import org.codehaus.jettison.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -194,76 +195,113 @@ public class WorkFlowService {
         String isBaseInfo = postPara.getIsBaseInfo();
         String followId = postPara.getFollowId();
         modifyFollowUpStatus(followId);
-
-        if("创建".equals(status)){
-            YunPatient yunPatient = null ;
-            if(null==docId||"".equals(docId)){
-                if(pid==null||"".equals(pid)){
-                    yunPatient = new YunPatient();
-                    yunPatient= mergePatient(yunPatient,postPara,yunUsers);
-                    //创建病例夹
-                    YunFolder yunFolder = new YunFolder() ;
-                    yunFolder=mergeYunFloder(yunFolder,postDocumentData,yunPatient);
-                    YunRecordDocment yunRecordDocment = new YunRecordDocment();
-                    yunRecordDocment=mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
-                    return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+        try{
+            if("创建".equals(status)){
+                YunPatient yunPatient = null ;
+                if(null==docId||"".equals(docId)){
+                    if(pid==null||"".equals(pid)){
+                        yunPatient = new YunPatient();
+                        yunPatient= mergePatient(yunPatient,postPara,yunUsers);
+                        //创建病例夹
+                        YunFolder yunFolder = new YunFolder() ;
+                        yunFolder=mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+                        YunRecordDocment yunRecordDocment = new YunRecordDocment();
+                        yunRecordDocment=mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                        return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+                    }else{
+                        yunPatient = baseFacade.get(YunPatient.class,pid);
+                        if("1".equals(isBaseInfo)){
+                            yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                        }
+                        Boolean isSamePerson = JudgeIfSamePerson(yunPatient);
+                        if(!isSamePerson){
+                            throw new FolderSaveException("病人病历非本人或本人的研究助手创建，不能修改");
+                        }
+                        YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());
+                        yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+                        YunRecordDocment yunRecordDocment = new YunRecordDocment();
+                        yunRecordDocment =mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                        return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+                    }
                 }else{
-                    yunPatient = baseFacade.get(YunPatient.class,pid);
+                    YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
+                    String folderId = yunRecordDocment.getFolderId();
+                    YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
+                    String patientId = yunFolder.getPatientId();
+                    yunPatient = baseFacade.get(YunPatient.class,patientId);
                     if("1".equals(isBaseInfo)){
                         yunPatient = mergePatient(yunPatient,postPara,yunUsers);
                     }
-                    YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());
+                    Boolean isSamePerson = JudgeIfSamePerson(yunPatient);
+                    if(!isSamePerson){
+                        throw new FolderSaveException("病人病历非本人或本人的研究助手创建，不能修改");
+                    }
                     yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
-                    YunRecordDocment yunRecordDocment = new YunRecordDocment();
-                    yunRecordDocment =mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
-                    return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
-                }
-            }else{
-                YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
-                String folderId = yunRecordDocment.getFolderId();
-                YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
-                String patientId = yunFolder.getPatientId();
-                yunPatient = baseFacade.get(YunPatient.class,patientId);
-                if("1".equals(isBaseInfo)){
-                    yunPatient = mergePatient(yunPatient,postPara,yunUsers);
-                }
-                yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
-                yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
-                return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
-            }
-
-
-        }
-
-        if("填写".equals(status)||"完成".equals(status)){
-            if(docId==null||"".equals(docId)){
-                if(pid==""||pid==null){
-                    throw new Exception("传入的病人信息为空，请传递病人ID");
-                }else{
-                    YunPatient yunPatient = baseFacade.get(YunPatient.class,pid);
-                    YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());;
-                    YunRecordDocment yunRecordDocment = new YunRecordDocment();
                     yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
                     return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
                 }
-            }else{
-                YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
-                if(yunRecordDocment==null){
-                    yunRecordDocment = getYunRecordDocmentByPid(pid);
-                }
-                String folderId = yunRecordDocment.getFolderId();
-                YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
-                String patientId = yunFolder.getPatientId();
-                YunPatient yunPatient = baseFacade.get(YunPatient.class,patientId);
-                if("1".equals(isBaseInfo)){
-                    yunPatient = mergePatient(yunPatient,postPara,yunUsers);
-                }
-                yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
-                yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
-                return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+
+
             }
+
+            if("填写".equals(status)||"完成".equals(status)){
+                if(docId==null||"".equals(docId)){
+                    if(pid==""||pid==null){
+                        throw new Exception("传入的病人信息为空，请传递病人ID");
+                    }else{
+                        YunPatient yunPatient = baseFacade.get(YunPatient.class,pid);
+                        Boolean isSamePerson = JudgeIfSamePerson(yunPatient);
+                        if(!isSamePerson){
+                            throw new FolderSaveException("病人病历非本人或本人的研究助手创建，不能修改");
+                        }
+                        YunFolder yunFolder = getYunFloderByPatientId(yunPatient.getId());;
+                        YunRecordDocment yunRecordDocment = new YunRecordDocment();
+                        yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                        return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+                    }
+                }else{
+                    YunRecordDocment yunRecordDocment = baseFacade.get(YunRecordDocment.class,docId);
+                    if(yunRecordDocment==null){
+                        yunRecordDocment = getYunRecordDocmentByPid(pid);
+                    }
+                    String folderId = yunRecordDocment.getFolderId();
+                    YunFolder yunFolder = baseFacade.get(YunFolder.class,folderId);
+                    String patientId = yunFolder.getPatientId();
+                    YunPatient yunPatient = baseFacade.get(YunPatient.class,patientId);
+                    if("1".equals(isBaseInfo)){
+                        yunPatient = mergePatient(yunPatient,postPara,yunUsers);
+                    }
+                    Boolean isSamePerson = JudgeIfSamePerson(yunPatient);
+                    if(!isSamePerson){
+                        throw new FolderSaveException("病人病历非本人或本人的研究助手创建，不能修改");
+                    }
+                    yunFolder = mergeYunFloder(yunFolder,postDocumentData,yunPatient);
+                    yunRecordDocment= mergeRecordCocument(yunRecordDocment,postPara,yunFolder,postDocumentData,yunUsers);
+                    return Response.status(Response.Status.OK).entity(yunRecordDocment).build();
+                }
+            }
+        }catch (FolderSaveException f){
+            throw new Exception("病人病历非本人或本人的研究助手创建，不能修改");
+        }
+        catch (Exception e){
+            throw new Exception("数据保存失败，请刷新页面后重试");
         }
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("未进入判断流程，请检查入参").build();
+    }
+
+    /**
+     * 判断修改病历的是否是同一个人，如果不是则不能修改
+     * @param yunPatient
+     * @return
+     * @throws Exception
+     */
+    private Boolean JudgeIfSamePerson(YunPatient yunPatient) throws Exception{
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        Boolean isSamePerson = false;
+        if(yunUsers.getId().equals(yunPatient.getDoctorId())|| yunUsers.getId().equals(yunPatient.getOwerId())){
+            isSamePerson = true;
+        }
+        return isSamePerson;
     }
 
     /**
