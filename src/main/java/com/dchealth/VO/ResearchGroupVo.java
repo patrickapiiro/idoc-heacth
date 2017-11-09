@@ -1,7 +1,5 @@
 package com.dchealth.VO;
 
-import com.dchealth.entity.common.HospitalDict;
-
 import java.util.List;
 
 /**
@@ -14,7 +12,7 @@ public class ResearchGroupVo {
     private String groupDesc;
     private String groupInInfo;
     private String manyHospitalFlag;
-    private List<HospitalDict> hospitals;
+    private List<String> hospitals;
     private String dataShareLevel;
     private String status;
 
@@ -32,7 +30,7 @@ public class ResearchGroupVo {
         this.status = status;
     }
 
-    public ResearchGroupVo(String id, String researchGroupName, String researchDiseaseId, String groupDesc, String groupInInfo, String manyHospitalFlag, List<HospitalDict> hospitals, String dataShareLevel, String status) {
+    public ResearchGroupVo(String id, String researchGroupName, String researchDiseaseId, String groupDesc, String groupInInfo, String manyHospitalFlag, List<String> hospitals, String dataShareLevel, String status) {
         this.id = id;
         this.researchGroupName = researchGroupName;
         this.researchDiseaseId = researchDiseaseId;
@@ -92,11 +90,11 @@ public class ResearchGroupVo {
         this.manyHospitalFlag = manyHospitalFlag;
     }
 
-    public List<HospitalDict> getHospitals() {
+    public List<String> getHospitals() {
         return hospitals;
     }
 
-    public void setHospitals(List<HospitalDict> hospitals) {
+    public void setHospitals(List<String> hospitals) {
         this.hospitals = hospitals;
     }
 

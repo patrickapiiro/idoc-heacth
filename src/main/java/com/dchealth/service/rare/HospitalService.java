@@ -51,8 +51,9 @@ public class HospitalService {
                                                   @QueryParam("currentPage") int currentPage){
         String hql = " from HospitalDict where status<>'-1'";
         if(!StringUtils.isEmpty(hospitalName)){
-            hql += " and hospitalName like '%"+hospitalName+"%'";
+            hql += " and hospitalName like '"+hospitalName+"%'";
         }
+        hql += " ORDER BY length(id) asc ";
         return baseFacade.getPageResult(HospitalDict.class,hql,perPage,currentPage);
     }
 
@@ -66,6 +67,12 @@ public class HospitalService {
     @Transactional
     @Path("merge")
     public Response mergeHospitalDict(HospitalDict hospitalDict) throws Exception{
+        if(!"-1".equals(hospitalDict.getStatus())){
+            Boolean isHaveSameHs = judgeIfHaveSameHospital(hospitalDict);
+            if(isHaveSameHs){
+                throw new Exception("该医院信息已存在，请勿重复添加");
+            }
+        }
         if(StringUtils.isEmpty(hospitalDict.getId())){//新增
             String hospitalCode = getMaxHospitalCode();
             if(!StringUtils.isEmpty(hospitalCode)){
@@ -78,6 +85,21 @@ public class HospitalService {
         return Response.status(Response.Status.OK).entity(mergeHospitalDict).build();
     }
 
+    /**
+     * 判断是否有重复医院
+     * @param hospitalDict
+     * @return
+     */
+    public Boolean judgeIfHaveSameHospital(HospitalDict hospitalDict){
+        String hql = "select hospitalName from HospitalDict where status<>'-1' and hospitalName = '"+hospitalDict.getHospitalName()+"'" +
+                     " and id <>'"+hospitalDict.getId()+"'";
+        List<String> nameList = baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
+        Boolean isHave = false;
+        if(nameList!=null && !nameList.isEmpty()){
+            isHave = true;
+        }
+        return isHave;
+    }
     /**
      * 获取医院编码最大值,并对最大值+1
      * @return

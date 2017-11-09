@@ -35,6 +35,7 @@
                 /api/yun-user/regist=anon
                 /login.html=anon
                 /api/hospital=anon
+                /api/hospital/get-hospital-dicts = anon
                 /api/yun-user/get-picture-code = anon
                 /api/statistics/get-disease-share-count = anon
                 /api/patcount/get-pat-count = anon
