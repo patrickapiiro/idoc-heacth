@@ -52,6 +52,11 @@ public class ResearchGroupService {
             ResearchGroup merge = baseFacade.merge(researchGroup);
             return Response.status(Response.Status.OK).entity(merge).build();
         }
+        String sameHql = "select researchGroupName from ResearchGroup where status<>'-1' and researchGroupName = '"+researchGroupVo.getResearchGroupName()+"' and id<>'"+researchGroupVo.getId()+"'";
+        List<String> stringList = baseFacade.createQuery(String.class,sameHql,new ArrayList<Object>()).getResultList();
+        if(stringList!=null && !stringList.isEmpty()){
+            throw new Exception("该群组名称已存在，请勿重新添加");
+        }
         if(StringUtils.isEmpty(researchGroupVo.getId())){
             YunUsers yunUsers = UserUtils.getYunUsers();
             ResearchGroup researchGroup = new ResearchGroup();

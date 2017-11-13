@@ -17,7 +17,7 @@ import java.util.List;
 public class UserFacade extends BaseFacade {
 
     public YunUsers getYunUsersByUserId(String userName) throws Exception {
-        String hql = "from YunUsers as user where user.userId='"+userName+"'";
+        String hql = "from YunUsers as user where user.userId='"+userName+"' and user.status<>'-1'";
         List<YunUsers> resultList = createQuery(YunUsers.class, hql, new ArrayList<>()).getResultList();
         if(resultList.size()>0){
             return resultList.get(0);
@@ -34,7 +34,7 @@ public class UserFacade extends BaseFacade {
      * @throws Exception
      */
     public YunUsers getYunUserById(String id) throws Exception {
-        String hql = "from YunUsers as user where user.id='"+id+"'";
+        String hql = "from YunUsers as user where user.id='"+id+"' and user.status<>'-1'";
         List<YunUsers> resultList = createQuery(YunUsers.class, hql, new ArrayList<>()).getResultList();
         if(resultList.size()>0){
             return resultList.get(0);
@@ -45,7 +45,7 @@ public class UserFacade extends BaseFacade {
 
 
     public YunUsers getYunUsersByLoginName(String username) throws Exception {
-        String hql = "from YunUsers as user where user.userId='"+username+"'";
+        String hql = "from YunUsers as user where user.userId='"+username+"' and user.status<>'-1'";
         List<YunUsers> resultList = createQuery(YunUsers.class, hql, new ArrayList<>()).getResultList();
         if(resultList.size()>0){
             return resultList.get(0);

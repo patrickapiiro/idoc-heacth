@@ -9,7 +9,7 @@ public class RowItem {
     private String name ;
     private String value;
     private String text ;
-    private String inputcode ;
+    private String inputCode ;
     private String loincCode;
 
     public String getName() {
@@ -36,12 +36,12 @@ public class RowItem {
         this.text = text;
     }
 
-    public String getInputcode() {
-        return inputcode;
+    public String getInputCode() {
+        return inputCode;
     }
 
-    public void setInputcode(String inputcode) {
-        this.inputcode = inputcode;
+    public void setInputCode(String inputCode) {
+        this.inputCode = inputCode;
     }
 
     public String getLoincCode() {

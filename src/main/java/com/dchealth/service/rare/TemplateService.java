@@ -172,6 +172,7 @@ public class TemplateService {
      */
     private Form getFormData(String mbsj) throws Exception {
 
+        mbsj = replaceMbsj(mbsj);
         Form o = (Form) JSONUtil.JSONToObj(mbsj, Form.class);
 
         List<FormData> form_datas = o.getForm_data();
@@ -196,6 +197,17 @@ public class TemplateService {
     }
 
 
+    /**
+     * 由于模板数据存有错误的英文字段，因此要转换下
+     * @param mbsj
+     * @return
+     */
+    public String replaceMbsj(String mbsj){
+        if(!StringUtils.isEmpty(mbsj) && mbsj.contains("inputcode")){
+            mbsj = mbsj.replace("inputcode","inputCode");
+        }
+        return mbsj;
+    }
     /**
      * 获取私有的模板设计内容
      * @param dcode
@@ -370,7 +382,7 @@ public class TemplateService {
 
             for(YunDictitem yunDictitem:resultList1){
                 RowItem rowItem = new RowItem();
-                rowItem.setInputcode(yunDictitem.getInputCode());
+                rowItem.setInputCode(yunDictitem.getInputCode());
                 rowItem.setName(StringUtils.replaceBank(value));//value 是否修改
                 rowItem.setText(yunDictitem.getItemName());
                 rowItem.setValue(yunDictitem.getItemCode());

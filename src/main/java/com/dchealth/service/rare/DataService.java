@@ -186,7 +186,7 @@ public class DataService {
     @Path("list-value-group")
     public List<String> getDiseaseGroupName(@QueryParam("doctorId") String doctorId){
         String hql = "select distinct (case when y.zflags is null then '' else y.zflags end) from YunValue as y where y.doctorId='"+doctorId+"' " +
-                     " or exists(select 1 from YunUsers as u where u.id = '"+doctorId+"' and u.deptId = y.deptId and u.deptId<>'0')" ;
+                     " or exists(select 1 from YunUsers as u where u.id = '"+doctorId+"' and u.deptId = y.deptId and u.status<>'-1' and u.deptId<>'0')" ;
         return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList() ;
     }
 

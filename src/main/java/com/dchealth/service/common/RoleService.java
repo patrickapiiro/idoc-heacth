@@ -30,7 +30,7 @@ public class RoleService {
     @GET
     @Path("list")
     public List<RoleDict> listRole(){
-        String hql = "from RoleDict as rd where rd.status='1'" ;
+        String hql = "from RoleDict as rd where rd.status='1' and code !='DOCTOR_ASSISTANT'" ;
         return baseFacade.createQuery(RoleDict.class,hql,new ArrayList<Object>()).getResultList();
     }
 
@@ -42,7 +42,7 @@ public class RoleService {
     @GET
     @Path("list-role-user")
     public List<YunUsers> listRoleUsers(@QueryParam("roldId") String roleId){
-        String hql="select y from YunUsers as y ,RoleVsUser rvu where y.id=rvu.userId and rvu.roleId='"+roleId+"'" ;
+        String hql="select y from YunUsers as y ,RoleVsUser rvu where y.id=rvu.userId and y.status<>'-1' and rvu.roleId='"+roleId+"'" ;
         return baseFacade.createQuery(YunUsers.class,hql,new ArrayList<Object>()).getResultList();
     }
 

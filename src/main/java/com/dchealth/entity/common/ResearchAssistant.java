@@ -10,6 +10,7 @@ public class ResearchAssistant {
     private String id;
     private String userId;
     private String assistant;
+    private String status;
 
     @Id
     @Column(name = "id")
@@ -41,4 +42,13 @@ public class ResearchAssistant {
         this.assistant = assistant;
     }
 
+    @Basic
+    @Column(name = "status")
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

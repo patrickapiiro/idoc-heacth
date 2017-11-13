@@ -37,6 +37,7 @@ public class YunUsers  {
     private String password ;
     private String hospitalName;
     private String hospitalCode ;
+    private String status;
 
     @Id
     @Column(name = "id")
@@ -283,6 +284,15 @@ public class YunUsers  {
         this.hospitalCode = hospitalCode;
     }
 
+    @Column(name="status")
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -312,6 +322,7 @@ public class YunUsers  {
         if (signature != null ? !signature.equals(yunUsers.signature) : yunUsers.signature != null) return false;
         if (picture != null ? !picture.equals(yunUsers.picture) : yunUsers.picture != null) return false;
         if (rolename != null ? !rolename.equals(yunUsers.rolename) : yunUsers.rolename != null) return false;
+        if (status != null ? !status.equals(yunUsers.status) : yunUsers.status != null) return false;
 
         return true;
     }
