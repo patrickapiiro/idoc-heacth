@@ -39,7 +39,7 @@ public class DiseaseCountService {
         List<String> dateList = getStaticsDate();
         List<DiseaseStatisVo> diseaseStatisVos = new ArrayList<>();
         //首先查询是否有管理病历信息
-       //Set<String> diseaseSet =  getManageDisease(doctorId);
+       Set<String> diseaseSet =  getManageDisease(doctorId);
        String  diseasHql = "select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode ";
        String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
        if(StringUtils.isEmpty(userIds)){
@@ -53,8 +53,10 @@ public class DiseaseCountService {
        }
        List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class,diseasHql,new ArrayList<Object>()).getResultList();
         Map<String,Long>  discussMap = getPatNumberByType(doctorId,userIds,"0");//
-        Map<String,Long>  manageMap = getPatNumberByType(doctorId,userIds,"1");//
-        discussMap.putAll(manageMap);
+        if(diseaseSet!=null && !diseaseSet.isEmpty()){
+            Map<String,Long>  manageMap = getPatNumberByType(doctorId,userIds,"1");//
+            discussMap.putAll(manageMap);
+        }
        for(YunDiseaseList yunDiseaseList:yunDiseaseLists){
             DiseaseStatisVo diseaseStatisVo = new DiseaseStatisVo();
             String dcode = yunDiseaseList.getDcode();

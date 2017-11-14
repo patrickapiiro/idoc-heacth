@@ -2,14 +2,17 @@ package com.dchealth.service.common;
 
 import com.dchealth.VO.Page;
 import com.dchealth.entity.common.ResearchAssistant;
+import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.facade.common.BaseFacade;
+import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.PasswordAndSalt;
 import com.dchealth.security.SystemPasswordService;
 import com.dchealth.util.SmsSendUtil;
 import com.dchealth.util.StringUtils;
 import com.dchealth.util.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,9 @@ public class AssistantService {
 
     @Autowired
     private BaseFacade baseFacade;
+
+    @Autowired
+    private UserFacade userFacade;
 
     /**
      * 添加一个人成为研究助手
@@ -57,11 +63,13 @@ public class AssistantService {
     @Path("remove-assistant")
     @Transactional
     public Response removeAssistant(ResearchAssistant researchAssistant) throws Exception{
-        researchAssistant.setStatus("-1");
-        ResearchAssistant merge = baseFacade.merge(researchAssistant);
+        String upAHql = " update ResearchAssistant set status = '-1' where userId = '"+researchAssistant.getUserId()+"' and assistant = '"+researchAssistant.getAssistant()+"'";
+        baseFacade.excHql(upAHql);
         String upHql = " update YunUsers set status = '-1' where id = '"+researchAssistant.getAssistant()+"'";
         baseFacade.excHql(upHql);
-        return Response.status(Response.Status.OK).entity(merge).build();
+        String delHql = " delete from RoleVsUser where userId = '"+researchAssistant.getAssistant()+"'";
+        baseFacade.excHql(delHql);
+        return Response.status(Response.Status.OK).entity(researchAssistant).build();
     }
 
     /**
@@ -85,31 +93,16 @@ public class AssistantService {
      */
     @POST
     @Path("merge-assistant")
-    @Transactional
     public Response mergeAssistant(YunUsers yunUsers) throws Exception{
-        YunUsers merge = null;
-        String hql = "select userId from YunUsers where id<>'"+yunUsers.getId()+"' and (userId = '"+yunUsers.getUserId()+"' or userName = '"+yunUsers.getUserName()+"')";
-        List<String> userList = baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
-        if(userList!=null && !userList.isEmpty()){
-            throw new Exception("登录名或用户名已存在，请重新填写");
+        try{
+            return userFacade.mergeAssistant(yunUsers);
+        }catch (DataIntegrityViolationException e){
+            throw new Exception("该手机号已被注册，请重新填写");
+        }catch (Exception e){
+            throw e;
         }
-        if(StringUtils.isEmpty(yunUsers.getId())){
-            YunUsers currentUser = UserUtils.getYunUsers();
-            PasswordAndSalt passwordAndSalt = SystemPasswordService.enscriptPassword(yunUsers.getUserId(), yunUsers.getPassword());
-            yunUsers.setPassword(passwordAndSalt.getPassword());
-            yunUsers.setSalt(passwordAndSalt.getSalt());
-            yunUsers.setRolename(SmsSendUtil.getStringByKey("roleCode"));
-            merge = baseFacade.merge(yunUsers);
-            ResearchAssistant researchAssistant = new ResearchAssistant();
-            researchAssistant.setStatus("0");
-            researchAssistant.setAssistant(merge.getId());
-            researchAssistant.setUserId(currentUser.getId());
-            baseFacade.merge(researchAssistant);
-        }else{
-            merge = baseFacade.merge(yunUsers);
-        }
-        return Response.status(Response.Status.OK).entity(merge).build();
     }
+
 
     /**
      *获取历史研究助手列表 带分页
@@ -152,6 +145,14 @@ public class AssistantService {
         String upAssistantHql = " update ResearchAssistant set status = '0' where assistant = '"+assistant+"'";
         baseFacade.excHql(upYunsersHql);
         baseFacade.excHql(upAssistantHql);
+        String rhql = "select id from RoleDict where code = '"+SmsSendUtil.getStringByKey("roleCode")+"'";
+        List<String> roleIds = baseFacade.createQuery(String.class,rhql,new ArrayList<Object>()).getResultList();
+        if(roleIds!=null && !roleIds.isEmpty()){
+            RoleVsUser roleVsUser = new RoleVsUser();
+            roleVsUser.setRoleId(roleIds.get(0));
+            roleVsUser.setUserId(assistant);
+            baseFacade.merge(roleVsUser);
+        }
         List list = new ArrayList();
         list.add(assistant);
         return Response.status(Response.Status.OK).entity(list).build();

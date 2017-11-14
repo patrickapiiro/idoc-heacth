@@ -601,11 +601,16 @@ public class ResearchGroupService {
             throw new Exception("群组信息不能为空");
         }
         YunDiseaseList yunDiseaseList = baseFacade.get(YunDiseaseList.class,researchDiseaseId);
+        ResearchGroup researchGroup = baseFacade.get(ResearchGroup.class,groupId);
         String hql = "select u from YunUsers as u,ResearchGroupVsHospital as vs,ResearchGroup as g,HospitalDict as h" +
                 " where g.status<>'-1' and g.id = vs.groupId and u.hospitalCode = h.hospitalCode and vs.hospitalId = h.id " +
                 " and exists(select 1 from YunUserDisease where dcode = '"+yunDiseaseList.getDcode()+"' and userId = u.id)" +
                 " and u.id not in(select userId from ResearchGroupVsUser where createrFlag = '1' and groupId = '"+groupId+"')" +
                 " and g.researchDiseaseId = '"+researchDiseaseId+"' and g.id = '"+groupId+"'";
+//        if("0".equals(researchGroup.getManyHospitalFlag())){
+//            YunUsers yunUsers = UserUtils.getYunUsers();
+//            hql += " and u.hospitalCode = '"+yunUsers.getHospitalCode()+"'";
+//        }
         if(!StringUtils.isEmpty(userName)){
             hql += " and u.userName like '"+userName+"%'";
         }

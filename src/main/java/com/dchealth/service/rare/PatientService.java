@@ -65,17 +65,17 @@ public class PatientService {
 //            }
 //            String manageDiseaseCodes = GroupQuerySqlUtil.getManageDiseaseCode(doctorIds,baseFacade);
             if(StringUtils.isEmpty(userIds)){
-                hql+=" and (p.doctorId = '"+doctorId+"'" ;
-                hqlCount+=" and (p.doctorId = '"+doctorId+"'" ;
+                hql+=" and p.doctorId = '"+doctorId+"'" ;
+                hqlCount+=" and p.doctorId = '"+doctorId+"'" ;
 
-                hql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId = '"+doctorId+"'))";
-                hqlCount += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId = '"+doctorId+"'))";
+//                hql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId = '"+doctorId+"'))";
+//                hqlCount += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId = '"+doctorId+"'))";
             }else{
-                hql+=" and (p.doctorId in ("+userIds+")" ;
-                hqlCount+=" and (p.doctorId in ("+userIds+")" ;
+                hql+=" and p.doctorId in ("+userIds+")" ;
+                hqlCount+=" and p.doctorId in ("+userIds+")" ;
 
-                hql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId in ("+userIds+")))";
-                hqlCount += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId in ("+userIds+")))";
+//                hql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId in ("+userIds+")))";
+//                hqlCount += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId in ("+userIds+")))";
 
             }
         }

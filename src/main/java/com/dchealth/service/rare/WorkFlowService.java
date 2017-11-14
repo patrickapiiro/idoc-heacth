@@ -401,7 +401,9 @@ public class WorkFlowService {
         if(!StringUtils.isEmpty(owerId)){
             patient.setOwerId(owerId);
         }
-        patient.setDoctorId(yunUsers.getId());
+        if(StringUtils.isEmpty(patient.getDoctorId())){//研究助手创建的病历被修改 创作者还为原先的医生
+            patient.setDoctorId(yunUsers.getId());
+        }
         patient.setDeptId(yunUsers.getDeptId());
         patient.setEmail(postPara.getEmail());
         patient.setMid(postPara.getmId());

@@ -109,12 +109,15 @@ public class DiseaseService {
         }
         List<YunDiseaseList>  yunDiseaseLists = baseFacade.createQuery(YunDiseaseList.class, hql, new ArrayList<Object>()).getResultList();
         Map<String,Long>  discussPatMap = getPatNumberByType(doctorId,userIds,"0");//
-        Map<String,Long>  managePatMap = getPatNumberByType(doctorId,userIds,"1");//
-        discussPatMap.putAll(managePatMap);
-
+        if(diseaseSet!=null && !diseaseSet.isEmpty()){
+            Map<String,Long>  managePatMap = getPatNumberByType(doctorId,userIds,"1");//
+            discussPatMap.putAll(managePatMap);
+        }
         Map<String,Long>  discussfollowMap = getFollowNumberByType(doctorId,userIds,"0");//
-        Map<String,Long>  managefollowMap = getFollowNumberByType(doctorId,userIds,"1");//
-        discussfollowMap.putAll(managefollowMap);
+        if(diseaseSet!=null && !diseaseSet.isEmpty()){
+            Map<String,Long>  managefollowMap = getFollowNumberByType(doctorId,userIds,"1");//
+            discussfollowMap.putAll(managefollowMap);
+        }
         for(YunDiseaseList list:yunDiseaseLists){
             DiseasePatInfo diseasePatInfo = new DiseasePatInfo(list,Long.parseLong("0"),Long.parseLong("0"));
             //Long patNumber = getPatNumber(doctorId, list.getDcode(),diseaseSet);
