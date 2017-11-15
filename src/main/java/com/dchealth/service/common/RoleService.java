@@ -30,6 +30,17 @@ public class RoleService {
     @GET
     @Path("list")
     public List<RoleDict> listRole(){
+        String hql = "from RoleDict as rd where rd.status='1'" ;//and code !='DOCTOR_ASSISTANT'
+        return baseFacade.createQuery(RoleDict.class,hql,new ArrayList<Object>()).getResultList();
+    }
+
+    /**
+     * 用户审核查询角色
+     * @return
+     */
+    @GET
+    @Path("list-audit")
+    public List<RoleDict> listAuditRole(){
         String hql = "from RoleDict as rd where rd.status='1' and code !='DOCTOR_ASSISTANT'" ;
         return baseFacade.createQuery(RoleDict.class,hql,new ArrayList<Object>()).getResultList();
     }

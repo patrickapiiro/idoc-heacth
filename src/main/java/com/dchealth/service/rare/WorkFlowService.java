@@ -400,6 +400,10 @@ public class WorkFlowService {
         String owerId = getOwerId(yunUsers,baseFacade);
         if(!StringUtils.isEmpty(owerId)){
             patient.setOwerId(owerId);
+        }else{
+            if(StringUtils.isEmpty(patient.getOwerId())){//第一次创建时赋值拥有者，其他人修改则不再赋值
+                patient.setOwerId(yunUsers.getId());//如果该用户不是研究助手 那么拥有者是其本人
+            }
         }
         if(StringUtils.isEmpty(patient.getDoctorId())){//研究助手创建的病历被修改 创作者还为原先的医生
             patient.setDoctorId(yunUsers.getId());

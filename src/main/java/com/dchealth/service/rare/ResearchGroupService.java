@@ -321,7 +321,7 @@ public class ResearchGroupService {
             throw new Exception("用户id不能为空");
         }
         String hql = "select userId from InviteApplyRecord where groupId = '"+groupId+"' and userId = '"+userId+"' and flag = '1'" +
-                " and status = '0'";
+                " and status in ('0','1') ";
         List list = baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
         if(list!=null && !list.isEmpty()){
             throw new Exception("该用户已邀请，请勿重复邀请");

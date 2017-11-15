@@ -68,8 +68,11 @@ public class GroupQuerySqlUtil {
             }else{
                 String haveGroupSql = GroupQuerySqlUtil.getGroupSql(doctorId);
                 List ctlist = baseFacade.createNativeQuery(haveGroupSql).getResultList();
+                List groupAssistList = getGroupAssistList(ctlist,baseFacade);
                 List assisList = getResearchAssistantSql(doctorId,"0",baseFacade);
                 ctlist.addAll(assisList);
+                ctlist.addAll(groupAssistList);
+                ctlist.add(doctorId);
                 userIds = GroupQuerySqlUtil.getUserIdsByList(ctlist);
             }
         }catch (Exception e){
@@ -79,8 +82,20 @@ public class GroupQuerySqlUtil {
     }
 
     /**
+     * 获取群组中用户下的研究助手
+     * @param ctlist
+     * @param baseFacade
+     * @return
+     */
+    public static List getGroupAssistList(List ctlist, BaseFacade baseFacade) {
+        String userIds = getUserIdsByList(ctlist);
+        String hql = " select assistant from ResearchAssistant where userId in ("+userIds+")";
+        return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
+    }
+
+    /**
      * 根据医生id获取其管理疾病信息
-     * @param doctorId
+     * @param doctorIds
      * @param baseFacade
      * @return
      */

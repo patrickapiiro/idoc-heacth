@@ -326,6 +326,24 @@ public class YunUserService {
     @Path("add-user-role")
     public Response addRoles(List<RoleDict> roleDicts,@QueryParam("userId") String userId) throws Exception {
         YunUsers yunUserById = userFacade.getYunUserById(userId);
+//        String rvHql = "select d from RoleVsUser as r,RoleDict as d where r.roleId = d.id and r.userId='"+userId+"'";
+//        List<RoleDict> roleDictList = userFacade.createQuery(RoleDict.class,rvHql,new ArrayList<Object>()).getResultList();
+//        Boolean isAssistan = false;
+//        if(roleDictList!=null && !roleDictList.isEmpty()){
+//            for(RoleDict roleDict:roleDictList){
+//                if(SmsSendUtil.getStringByKey("roleCode").equals(roleDict.getCode())){//研究助手
+//                    isAssistan = true;
+//                    if(!roleDicts.get(0).getCode().equals(roleDict.getCode())){
+//                        throw new Exception("不允许变更研究助手权限");
+//                    }
+//                }
+//            }
+//        }
+//        for(RoleDict dict:roleDicts){
+//            if(!isAssistan && SmsSendUtil.getStringByKey("roleCode").equals(dict.getCode())){
+//                throw new Exception("不允许将权限变更为研究助手权限");
+//            }
+//        }
         List<RoleVsUser> roleVsUsers = new ArrayList<>() ;
         String hql = "delete from RoleVsUser as r where r.userId='"+userId+"'" ;
         userFacade.excHql(hql);
