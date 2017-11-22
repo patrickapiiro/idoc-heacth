@@ -100,7 +100,7 @@ public class DiseaseService {
     public List<DiseasePatInfo> listDiseasePatInfo(@QueryParam("doctorId") String doctorId){
         List<DiseasePatInfo> diseasePatInfos = new ArrayList<>() ;
         Set<String> diseaseSet = getManageDisease(doctorId);
-        String hql="select ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode ";
+        String hql="select distinct ydl from YunUserDisease yud ,YunDiseaseList ydl where ydl.dcode=yud.dcode ";
         String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
         if(!StringUtils.isEmpty(userIds)){//大于0说明该用户有创建的群组 或者 参加的群组级别为A
             hql += " and yud.userId in ("+userIds+")";
