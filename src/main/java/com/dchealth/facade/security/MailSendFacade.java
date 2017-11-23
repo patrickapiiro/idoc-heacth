@@ -99,8 +99,10 @@ public class MailSendFacade {
      * @param info 发送内容
      * @throws Exception
      */
-    public void sendMail(String mailTo,String info) throws Exception{
-        String subject = "用户注册";
+    public void sendMail(String subject,String mailTo,String info) throws Exception{
+        if(StringUtils.isEmpty(subject)){
+            subject = "用户注册";
+        }
         if(null == session){
             MailProperties mailProperties=getMailProperties();
             initSession(mailProperties);

@@ -21,6 +21,11 @@
 
         <property name="initialPoolSize" value="${jdbc.initPoolSize}"></property>
         <property name="maxPoolSize" value="${jdbc.maxPoolSize}"></property>
+
+        <property name="maxIdleTime" value="${jdbc.maxIdleTime}"></property>
+        <property name="preferredTestQuery" value="${jdbc.preferredTestQuery}"></property>
+        <property name="idleConnectionTestPeriod" value="${jdbc.idleConnectionTestPeriod}"></property>
+        <property name="testConnectionOnCheckout" value="${jdbc.testConnectionOnCheckout}"></property>
     </bean>
 
     <bean id="persistenceProvider"

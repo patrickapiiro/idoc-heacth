@@ -15,9 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Administrator on 2017/6/21.
@@ -185,18 +183,235 @@ public class TemplateService {
 
             List<Row> rows = formData.getRows();
             List<RowObject> rowssubjects = modelPage.getRowssubjects();
+            Map<String,RowObject> rowObjectMap = new HashMap<String,RowObject>();
             for (Row row:rows){
                 RowObject rowObject = new RowObject();
-                setRowObject(row,rowObject);
+                setRowObject(row,rowObject);//赋值
                 rowssubjects.add(rowObject);
+                rowObjectMap.put(JSONUtil.objectToJsonString(row),rowObject);
             }
+            System.out.println(rowObjectMap.size()+"条");
+            long stime = System.currentTimeMillis();
+//            rowObjectMap = getRowObjectMapValue(rowObjectMap);
+//            for (Row row:rows){
+//                String key = JSONUtil.objectToJsonString(row);
+//                rowssubjects.add(rowObjectMap.get(key));
+//            }
+            long etime = System.currentTimeMillis();
+            System.out.println("花费时间"+(etime-stime)+"毫秒");
             formPage.getPages().add(modelPage);
         }
         o.setForm_template(formPage);
         return  o;
     }
 
+    public Map<String,RowObject> getRowObjectMapValue(Map<String,RowObject> rowObjectMap) throws Exception{
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        String deptId = yunUsers.getDeptId();
+        String id = yunUsers.getId();
 
+        Map<String,ElementRow> colElementRowMap = new HashMap<>();
+        StringBuffer colValuesBuf = new StringBuffer("");
+        if(rowObjectMap!=null && !rowObjectMap.isEmpty()){
+            for(String key:rowObjectMap.keySet()){
+                Row row = (Row)JSONUtil.JSONToObj(key, Row.class);
+                RowObject rowObject = rowObjectMap.get(key);
+                if(row.getCols()!=null && !row.getCols().isEmpty()){
+                    rowObject.setColumn(String.valueOf(12/row.getCols().size()));
+                    for (Col col:row.getCols()){
+                        ElementRow elementRow = new ElementRow();
+                        elementRow.setName(col.getValue());
+                        colElementRowMap.put(StringUtils.replaceBank(col.getValue()),elementRow);
+                        colValuesBuf.append("'").append(StringUtils.replaceBank(col.getValue())).append("',");
+                    }
+                }
+            }
+        }
+        String colValues = colValuesBuf.toString();
+        if(!StringUtils.isEmpty(colValues)){
+            Map<String,String> colFmtMap = new HashMap<>();
+            colValues = colValues.substring(0,colValues.length()-1);
+            String valueFmtSql = "select v.name,t.format,v.doctor_id,t.dict,t.relyon from yun_value_format as t,yun_value as v where t.id = v.id" +
+                    " and v.name in ("+colValues+")";
+            List valueFmtList = baseFacade.createNativeQuery(valueFmtSql).getResultList();
+            if(valueFmtList!=null && !valueFmtList.isEmpty()){
+                int size = valueFmtList.size();
+                for(int i=0;i<size;i++){
+                    Object[] params = (Object[])valueFmtList.get(i);
+                    String name = params[0]+"";
+                    name = StringUtils.replaceBank(name);
+                    if(!colFmtMap.containsKey(name)){
+                        String doctorId = (params[2]==null?"":params[2].toString());
+                        String dict = (params[3]==null?"":params[3].toString());
+                        String relyon = (params[4]==null?"":params[4].toString());
+                        colFmtMap.put(name,params[1]+"@"+doctorId+"@"+dict+"@"+relyon);
+                    }
+                }
+            }
+            for(String key:colElementRowMap.keySet()){
+                if(!colFmtMap.containsKey(key)){
+                    String valueFmtLikeSql = "select v.name,t.format,v.doctor_id,t.dict,t.relyon from yun_value_format as t,yun_value as v where t.id = v.id" +
+                            " and v.name like '"+key+"%'";
+                    List valueFmtLikeList = baseFacade.createNativeQuery(valueFmtLikeSql).getResultList();
+                    if(valueFmtLikeList!=null && !valueFmtLikeList.isEmpty()){
+                        Object[] params = (Object[])valueFmtLikeList.get(0);
+                        String name = params[0]+"";
+                        name = StringUtils.replaceBank(name);
+                        if(!colFmtMap.containsKey(name)){
+                            String doctorId = (params[2]==null?"":params[2].toString());
+                            String dict = (params[3]==null?"":params[3].toString());
+                            String relyon = (params[4]==null?"":params[4].toString());
+                            colFmtMap.put(name,params[1]+"@"+doctorId+"@"+dict+"@"+relyon);
+                        }
+                    }else{
+                        throw new Exception("获取名称为【"+key+"】的元数据格式失败！");
+                    }
+                }
+            }
+            StringBuffer dictsBuffer = new StringBuffer("");//存储dict字典信息内容
+            Map<String,String> valueToDictMap = new HashMap<>();
+            Map<String,List<YunDictitemVo>> valueYunDictitemMap = new HashMap<>();
+            for(String key:colElementRowMap.keySet()){
+                ElementRow elementRow = colElementRowMap.get(key);
+                String params = colFmtMap.get(key);
+                String[] paramArray = params.split("@");
+                String format = paramArray[0];
+                String doctorId = paramArray.length>1?paramArray[1]:"";
+                String dict = paramArray.length>2?paramArray[2]:"";
+                String relyon = paramArray.length>3?paramArray[3]:"";
+                DataElementFormat dataElement = (DataElementFormat) JSONUtil.JSONToObj(format, DataElementFormat.class);
+                Extend extend = new Extend();
+                String extend1 = dataElement.getExtend();
+                if(extend1!=null&&!"".equals(extend1)){
+                    Extend obj = (Extend) JSONUtil.JSONToObj(extend1,Extend.class);
+                    extend.setHead(obj.getHead());
+                    extend.setPlac(obj.getPlac());
+                    extend.setTail(obj.getTail());
+                }else{
+                    extend.setHead(dataElement.getHead());
+                    extend.setPlac(dataElement.getPlac());
+                    extend.setTail(dataElement.getTail());
+                }
+                String relyonvalue = dataElement.getRelyonvalue();
+                extend.setRelyon(StringUtils.replaceBank(relyon));//relyon 可能含有- 需转换下
+                extend.setRelyonvalue(relyonvalue);
+                extend.setTemplet(dataElement.getTemplet());
+                elementRow.setExtend(extend);
+                elementRow.setType(dataElement.getPart());
+                elementRow.setName(key);
+                if(!StringUtils.isEmpty(dict)){//元数据下字典不为空
+                    dictsBuffer.append("'").append(dict).append("',");
+                    valueToDictMap.put(key,dict+"@"+doctorId);
+                }
+            }
+            String dictsNames = dictsBuffer.toString();
+            if(!StringUtils.isEmpty(dictsNames)){
+                dictsNames = dictsNames.substring(0,dictsNames.length()-1);
+                String hqlDict = "select new com.dchealth.VO.YunDictitemVo(yi.id,yd.typeName,yi.itemCode,yi.itemName,yi.inputCode,yi.loincCode) from " +
+                        " YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName in("+dictsNames+")" +
+                        " and (( yd.userId='"+id+"') or (yd.deptId='"+deptId+"' and yd.deptId<>'0'))" +
+                        " order by yd.userId ,yd.deptId desc" ;
+                List<YunDictitemVo> resultList1 = baseFacade.createQuery(YunDictitemVo.class, hqlDict, new ArrayList<Object>()).getResultList();
+                if(resultList1!=null && !resultList1.isEmpty()){
+                    for(YunDictitemVo yunDictitemVo:resultList1){
+                        String typeName = yunDictitemVo.getTypeName();
+                        if(valueYunDictitemMap.get(typeName)!=null){
+                            List<YunDictitemVo> yunDictitemVos = valueYunDictitemMap.get(typeName);
+                            yunDictitemVos.add(yunDictitemVo);
+                        }else{
+                            List<YunDictitemVo> yunDictitemVos = new ArrayList<>();
+                            yunDictitemVos.add(yunDictitemVo);
+                            valueYunDictitemMap.put(typeName,yunDictitemVos);
+                        }
+                    }
+                }
+                StringBuffer pubDictsBf = new StringBuffer("");
+                for(String key:valueToDictMap.keySet()){
+                    String value = valueToDictMap.get(key);
+                    String dict = value.split("@")[0];
+                    if(!valueYunDictitemMap.containsKey(dict)){
+                        pubDictsBf.append("'").append(dict).append("',");
+                    }
+                }
+                String pubDictNames = pubDictsBf.toString();
+                if(!StringUtils.isEmpty(pubDictNames)){
+                    pubDictNames = pubDictNames.substring(0,pubDictNames.length()-1);
+                    String hqlPubDict = "select new com.dchealth.VO.YunDictitemVo(yi.id,yd.typeName,yi.itemCode,yi.itemName,yi.inputCode,yi.loincCode)" +
+                            " from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName in("+pubDictNames+") " +
+                            " and yd.userId='0'" ;
+                    List<YunDictitemVo> resultList2 = baseFacade.createQuery(YunDictitemVo.class, hqlPubDict, new ArrayList<Object>()).getResultList();
+                    if(resultList2!=null && !resultList2.isEmpty()){
+                        for(YunDictitemVo yunDictitemVo:resultList2){
+                            String typeName = yunDictitemVo.getTypeName();
+                            if(valueYunDictitemMap.get(typeName)!=null){
+                                List<YunDictitemVo> yunDictitemVos = valueYunDictitemMap.get(typeName);
+                                yunDictitemVos.add(yunDictitemVo);
+                            }else{
+                                List<YunDictitemVo> yunDictitemVos = new ArrayList<>();
+                                yunDictitemVos.add(yunDictitemVo);
+                                valueYunDictitemMap.put(typeName,yunDictitemVos);
+                            }
+                        }
+                    }
+                }
+                for(String key:valueToDictMap.keySet()){
+                    String value = valueToDictMap.get(key);
+                    String dict = value.split("@")[0];
+                    String doctorId = value.split("@")[1];
+                    if(!valueYunDictitemMap.containsKey(dict)){
+                        List<YunDictitemVo> yunDictitemVos = getOtherDoctorDictitem(dict,doctorId);
+                        valueYunDictitemMap.put(dict,yunDictitemVos);
+                    }
+                }
+                for(String key:colElementRowMap.keySet()){
+                    ElementRow elementRow = colElementRowMap.get(key);
+                    String dictAndDoctor = valueToDictMap.get(key);
+                    if(!StringUtils.isEmpty(dictAndDoctor)){
+                        String dict = dictAndDoctor.split("@")[0];
+                        List<YunDictitemVo> yunDictitemVos = valueYunDictitemMap.get(dict);
+                        for(YunDictitemVo yunDictitemVo:yunDictitemVos){
+                            RowItem rowItem = new RowItem();
+                            rowItem.setInputCode(yunDictitemVo.getInputCode());
+                            rowItem.setName(StringUtils.replaceBank(key));//value 是否修改
+                            rowItem.setText(yunDictitemVo.getItemName());
+                            rowItem.setValue(yunDictitemVo.getItemCode());
+                            rowItem.setLoincCode(yunDictitemVo.getLoincCode());
+                            elementRow.getItems().add(rowItem);
+                        }
+                    }
+                }
+                for(String key:rowObjectMap.keySet()){
+                    Row row = (Row)JSONUtil.JSONToObj(key, Row.class);
+                    RowObject rowObject = rowObjectMap.get(key);
+                    if(row.getCols()!=null && !row.getCols().isEmpty()){
+                        for(Col col:row.getCols()){
+                            String colValue = StringUtils.replaceBank(col.getValue());
+                            rowObject.getRows().add(colElementRowMap.get(colValue));
+                        }
+                    }
+                }
+            }
+        }
+        return rowObjectMap;
+    }
+
+    /**
+     * 根据字典名称和医生id获取相应的字典信息
+     * @param dict
+     * @param valueDoctorId
+     * @return
+     * @throws Exception
+     */
+    public List<YunDictitemVo> getOtherDoctorDictitem(String dict,String valueDoctorId) throws Exception{
+        String hqlOther = "select new com.dchealth.VO.YunDictitemVo(yi.id,yd.typeName,yi.itemCode,yi.itemName,yi.inputCode,yi.loincCode)" +
+                " from YunDicttype as yd,YunDictitem yi  where yd.id=yi.typeIdDm and yd.typeName='"+dict+"'" +
+                " and yd.userId='"+valueDoctorId+"' ";
+        List<YunDictitemVo> resultList = baseFacade.createQuery(YunDictitemVo.class, hqlOther, new ArrayList<Object>()).getResultList();
+        if(resultList.size()<1){
+            throw new Exception("获取名称为【"+dict+"】的字典失败");
+        }
+        return resultList;
+    }
     /**
      * 由于模板数据存有错误的英文字段，因此要转换下
      * @param mbsj
@@ -219,12 +434,12 @@ public class TemplateService {
     @Path("get-private-work-form")
     public Form getPrivateTemplateForm(@QueryParam("dcode")String dcode,@QueryParam("title")String title) throws Exception {
         YunUsers yunUsers = UserUtils.getYunUsers();
-        String hqlPrivate = "from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
+        String hqlPrivate = "select t.mbsj from YunDisTemplet as t where t.dcode='"+dcode+"' and t.title='"+title+"' and (t.doctorId='"+yunUsers.getId()+"'" +
                 " or (t.deptId='"+yunUsers.getDeptId()+"' and t.deptId<>'0'))" ;
-        List<YunDisTemplet> yunDisTemplets = baseFacade.createQuery(YunDisTemplet.class, hqlPrivate, new ArrayList<Object>()).getResultList();
-        if(yunDisTemplets.size()>0){
-            YunDisTemplet tmplate = yunDisTemplets.get(0);
-            String mbsj = tmplate.getMbsj();
+        List<String> yunDisTemplets = baseFacade.createQuery(String.class, hqlPrivate, new ArrayList<Object>()).getResultList();
+        if(yunDisTemplets!=null && !yunDisTemplets.isEmpty()){
+            //YunDisTemplet tmplate = yunDisTemplets.get(0);
+            String mbsj = yunDisTemplets.get(0);
             if(mbsj!=null&&!"".equals(mbsj)){
                 return getFormData(mbsj);
             }else{
@@ -245,11 +460,11 @@ public class TemplateService {
     @GET
     @Path("get-pub-work-form")
     public Form getPubTemplateForm(@QueryParam("dcode")String dcode,@QueryParam("title")String title) throws Exception {
-        String hql = "from YunReleaseTemplet as r where r.hstatus='R' and  r.dcode='"+dcode+"' and r.title='"+title+"'" ;
-        List<YunReleaseTemplet> resultList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
-        if(resultList.size()>0){
-            YunReleaseTemplet yunReleaseTemplet = resultList.get(0);
-            String mbsj = yunReleaseTemplet.getMbsj();
+        String hql = "select mbsj from YunReleaseTemplet as r where r.hstatus='R' and  r.dcode='"+dcode+"' and r.title='"+title+"'" ;
+        List<String> resultList = baseFacade.createQuery(String.class, hql, new ArrayList<Object>()).getResultList();
+        if(resultList!=null && !resultList.isEmpty()){
+            //YunReleaseTemplet yunReleaseTemplet = resultList.get(0);
+            String mbsj = resultList.get(0);
             if(mbsj!=null&&!"".equals(mbsj)){
                 return getFormData(mbsj);
             }else{
