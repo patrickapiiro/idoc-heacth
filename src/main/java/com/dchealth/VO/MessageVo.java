@@ -18,6 +18,9 @@ public class MessageVo {
     private Timestamp sendDate;
     private Timestamp createDate;
 
+    public MessageVo() {
+    }
+
     public MessageVo(String id, String sendId, String title, String content, Date sendDate, Date createDate) {
         this.id = id;
         this.sendId = sendId;
@@ -26,6 +29,7 @@ public class MessageVo {
         this.sendDate = new Timestamp(sendDate.getTime());
         this.createDate = new Timestamp(createDate.getTime());
     }
+
 
     public String getId() {
         return id;

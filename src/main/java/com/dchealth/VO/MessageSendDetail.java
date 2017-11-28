@@ -5,26 +5,26 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Created by Administrator on 2017/11/9.
+ * Created by Administrator on 2017/11/28.
  */
-public class MessageRecVo {
+public class MessageSendDetail {
     private String id;
     private String title;
     private String content;
-    //private String userName;
-    //private String status;
-    private List<RecUserInfo> recUserInfos;
+    private String userName;
+    private String status;
     private Timestamp createDate;
 
-    public MessageRecVo(String id, String title, String content, List<RecUserInfo> recUserInfos,Timestamp createDate) {
+    public MessageSendDetail() {
+    }
+
+    public MessageSendDetail(String id, String title, String content, String userName, String status, Date createDate) {
         this.id = id;
         this.title = title;
         this.content = content;
-//        this.userName = userName;
-//        this.status = status;
-        this.recUserInfos = recUserInfos;
-        this.recUserInfos = recUserInfos;
-        this.createDate = createDate;
+        this.userName = userName;
+        this.status = status;
+        this.createDate = new Timestamp(createDate.getTime());
     }
 
     public String getId() {
@@ -51,12 +51,20 @@ public class MessageRecVo {
         this.content = content;
     }
 
-    public List<RecUserInfo> getRecUserInfos() {
-        return recUserInfos;
+    public String getUserName() {
+        return userName;
     }
 
-    public void setRecUserInfos(List<RecUserInfo> recUserInfos) {
-        this.recUserInfos = recUserInfos;
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Timestamp getCreateDate() {

@@ -1,5 +1,7 @@
 package com.dchealth.entity.rare;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -21,7 +23,9 @@ public class MessageText {
     private Timestamp modifyDate;
 
     @Id
-    @Column(name = "id", nullable = false, length = 64)
+    @Column(name = "id")
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
     public String getId() {
         return id;
     }

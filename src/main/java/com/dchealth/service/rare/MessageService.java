@@ -1,8 +1,6 @@
 package com.dchealth.service.rare;
 
-import com.dchealth.VO.MessageRecVo;
-import com.dchealth.VO.MessageVo;
-import com.dchealth.VO.Page;
+import com.dchealth.VO.*;
 import com.dchealth.entity.common.YunUsers;
 import com.dchealth.entity.rare.Message;
 import com.dchealth.entity.rare.MessageText;
@@ -83,7 +81,7 @@ public class MessageService {
                 for(String recId:recIds){
                     Message message = new Message();
                     message.setSendId(messageVo.getSendId());
-                    message.setRecId("0");
+                    message.setRecId(recId);
                     message.setMessageId(messageId);
                     message.setStatus("0");
                     message.setCreateDate(new  Timestamp(new Date().getTime()));
@@ -140,11 +138,13 @@ public class MessageService {
         Page<MessageVo> messageVoPage = baseFacade.getPageResult(MessageVo.class,hql,perPage,currentPage);
         List<MessageVo> messageVos = messageVoPage.getData();
         String messageIds = getMessageIds(messageVos);
-        String reHql = " from Message where sendId = '"+userId+"' and messageId in("+messageIds+")";
-        List<Message> messageList = baseFacade.createQuery(Message.class,reHql,new ArrayList<Object>()).getResultList();
-        Map<String,List<String>> listMap = getMessageRecIdsMap(messageList);
-        messageVos = setRecIdsByMap(listMap,messageVos);
-        messageVoPage.setData(messageVos);
+        if(!StringUtils.isEmpty(messageIds)){
+            String reHql = " from Message where sendId = '"+userId+"' and messageId in("+messageIds+")";
+            List<Message> messageList = baseFacade.createQuery(Message.class,reHql,new ArrayList<Object>()).getResultList();
+            Map<String,List<String>> listMap = getMessageRecIdsMap(messageList);
+            messageVos = setRecIdsByMap(listMap,messageVos);
+            messageVoPage.setData(messageVos);
+        }
         return messageVoPage;
     }
 
@@ -155,28 +155,30 @@ public class MessageService {
      */
     @GET
     @Path("get-self-messageRecVos")
-    public Page<MessageRecVo> getSelfMessageRecVos(@QueryParam("messageId")String messageId, @QueryParam("perPage")
+    public List<MessageRecVo> getSelfMessageRecVos(@QueryParam("messageId")String messageId, @QueryParam("perPage")
                                                     int perPage, @QueryParam("currentPage")int currentPage){
-        Page<MessageRecVo> resultPage = new Page<>();
-        String hql = "select new com.dchealth.VO.MessageRecVo(m.id,m.title,m.content,u.userName,e.status,m.createDate) from MessageText as m,Message as e,YunUsers as u where m.status <>'-1'" +
-                " and m.id = e.messageId and e.recId = u.id and e.status<>'-1' and m.id = '"+messageId+"'";
-        String hqlCount = "select count(*) from MessageText as m,Message as e where m.status <>'-1'" +
-                " and m.id = e.messageId and e.status<>'-1' and m.id = '"+messageId+"'";
-        TypedQuery<MessageRecVo> typedQuery = baseFacade.createQuery(MessageRecVo.class,hql,new ArrayList<Object>());
-        Long counts =  baseFacade.createQuery(Long.class,hqlCount,new ArrayList<Object>()).getSingleResult();
-        resultPage.setCounts(counts);
-        if(perPage<=0){
-            perPage =15;
+        List<MessageRecVo> messageRecVos = new ArrayList<>();
+        String hql = " from MessageText where status<>'-1' and  id = '"+messageId+"'";
+        List<MessageText> messageTexts = baseFacade.createQuery(MessageText.class,hql,new ArrayList<Object>()).getResultList();
+        if(messageTexts!=null && !messageTexts.isEmpty()){
+            MessageText messageText = messageTexts.get(0);
+            String userHql = "select u.user_name,e.status from Message as e,yun_users as u where " +
+                    " e.recId = u.id and e.status<>'-1' and e.messageId = '"+messageId+"'";
+            List list = baseFacade.createNativeQuery(userHql).getResultList();
+            List<RecUserInfo> recUserInfos = new ArrayList<>();
+            for(int i=0;i<list.size();i++){
+                RecUserInfo recUserInfo = new RecUserInfo();
+                Object[] params = (Object[])list.get(i);
+                String userName = params[0]==null?"":(params[0]+"");
+                String status = params[1]==null?"":(params[1]+"");
+                recUserInfo.setUserName(userName);
+                recUserInfo.setStatus(status);
+                recUserInfos.add(recUserInfo);
+            }
+            MessageRecVo  messageRecVo = new MessageRecVo(messageText.getId(),messageText.getTitle(),messageText.getContent(),recUserInfos,messageText.getCreateDate());
+            messageRecVos.add(messageRecVo);
         }
-        if(currentPage<=0){
-            currentPage=1;
-        }
-        typedQuery.setFirstResult((currentPage-1)*perPage);
-        typedQuery.setMaxResults(perPage);
-        resultPage.setPerPage((long)perPage);
-        List<MessageRecVo> resultList = typedQuery.getResultList();
-        resultPage.setData(resultList);
-        return resultPage;
+        return messageRecVos;
     }
     /**
      * 登录用户获取自己收到的站内信通知
@@ -186,14 +188,14 @@ public class MessageService {
      */
     @GET
     @Path("get-my-message-texts")
-    public Page<MessageRecVo> getMyMessageTexts(@QueryParam("userId")String userId, @QueryParam("title")String title, @QueryParam("perPage")
+    public Page<MessageSendDetail> getMyMessageTexts(@QueryParam("userId")String userId, @QueryParam("title")String title, @QueryParam("perPage")
                                                int perPage, @QueryParam("currentPage")int currentPage){
-        Page<MessageRecVo> resultPage = new Page<>();
-        String hql = "select new com.dchealth.VO.MessageRecVo(m.id,m.title,m.content,(select userName from YunUsers where id = m.createBy) as userName,e.status,m.createDate) from MessageText as m,Message as e where m.status <>'-1'" +
+        Page<MessageSendDetail> resultPage = new Page<>();
+        String hql = "select new com.dchealth.VO.MessageSendDetail(m.id,m.title,m.content,(select userName from YunUsers where id = m.createBy) as userName,e.status,m.createDate) from MessageText as m,Message as e where m.status <>'-1'" +
                 " and m.id = e.messageId and e.status<>'-1' and e.recId = '"+userId+"'";
         String hqlCount = "select count(*) from MessageText as m,Message as e where m.status <>'-1'" +
                 " and m.id = e.messageId and e.status<>'-1' and e.recId = '"+userId+"'";
-        TypedQuery<MessageRecVo> typedQuery = baseFacade.createQuery(MessageRecVo.class,hql,new ArrayList<Object>());
+        TypedQuery<MessageSendDetail> typedQuery = baseFacade.createQuery(MessageSendDetail.class,hql,new ArrayList<Object>());
         Long counts =  baseFacade.createQuery(Long.class,hqlCount,new ArrayList<Object>()).getSingleResult();
         resultPage.setCounts(counts);
         if(perPage<=0){
@@ -205,7 +207,7 @@ public class MessageService {
         typedQuery.setFirstResult((currentPage-1)*perPage);
         typedQuery.setMaxResults(perPage);
         resultPage.setPerPage((long)perPage);
-        List<MessageRecVo> resultList = typedQuery.getResultList();
+        List<MessageSendDetail> resultList = typedQuery.getResultList();
         resultPage.setData(resultList);
         return resultPage;
     }

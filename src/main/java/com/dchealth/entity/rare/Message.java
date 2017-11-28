@@ -1,9 +1,8 @@
 package com.dchealth.entity.rare;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import org.hibernate.annotations.GenericGenerator;
+
+import javax.persistence.*;
 import java.sql.Date;
 import java.sql.Timestamp;
 
@@ -21,7 +20,9 @@ public class Message {
     private Timestamp modifyDate;
 
     @Id
-    @Column(name = "id", nullable = false, length = 64)
+    @Column(name = "id")
+    @GenericGenerator(name="generator",strategy = "uuid.hex")
+    @GeneratedValue(generator = "generator")
     public String getId() {
         return id;
     }
