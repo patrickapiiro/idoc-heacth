@@ -1,46 +1,26 @@
 package com.dchealth.VO;
 
+import com.dchealth.entity.common.HospitalDict;
+
 import java.util.List;
 
-/**
- * Created by Administrator on 2017/10/30.
- */
-public class ResearchGroupVo {
+public class ResearchGroupHospitalVo {
+
     private String id;
     private String researchGroupName;
     private String researchDiseaseId;
     private String groupDesc;
     private String groupInInfo;
     private String manyHospitalFlag;
-    private List<String> hospitals;
+    private List<HospitalDictVo> hospitals;
     private List<HospitalProtocolVo> hospitalProtocolIds;
     private String dataShareLevel;
     private String status;
 
-    public ResearchGroupVo() {
+    public ResearchGroupHospitalVo() {
     }
 
-    public List<HospitalProtocolVo> getHospitalProtocolIds() {
-        return hospitalProtocolIds;
-    }
-
-    public void setHospitalProtocolIds(List<HospitalProtocolVo> hospitalProtocolIds) {
-        this.hospitalProtocolIds = hospitalProtocolIds;
-    }
-
-    public ResearchGroupVo(String id, String researchGroupName, String researchDiseaseId, String groupDesc, String groupInInfo, String manyHospitalFlag, String dataShareLevel, String status) {
-        this.id = id;
-        this.researchGroupName = researchGroupName;
-        this.researchDiseaseId = researchDiseaseId;
-        this.groupDesc = groupDesc;
-        this.groupInInfo = groupInInfo;
-        this.manyHospitalFlag = manyHospitalFlag;
-        this.dataShareLevel = dataShareLevel;
-        this.status = status;
-
-    }
-
-    public ResearchGroupVo(String id, String researchGroupName, String researchDiseaseId, String groupDesc, String groupInInfo, String manyHospitalFlag, List<String> hospitals, List<HospitalProtocolVo> hospitalProtocolIds, String dataShareLevel, String status) {
+    public ResearchGroupHospitalVo(String id, String researchGroupName, String researchDiseaseId, String groupDesc, String groupInInfo, String manyHospitalFlag, List<HospitalDictVo> hospitals, List<HospitalProtocolVo> hospitalProtocolIds, String dataShareLevel, String status) {
         this.id = id;
         this.researchGroupName = researchGroupName;
         this.researchDiseaseId = researchDiseaseId;
@@ -101,12 +81,20 @@ public class ResearchGroupVo {
         this.manyHospitalFlag = manyHospitalFlag;
     }
 
-    public List<String> getHospitals() {
+    public List<HospitalDictVo> getHospitals() {
         return hospitals;
     }
 
-    public void setHospitals(List<String> hospitals) {
+    public void setHospitals(List<HospitalDictVo> hospitals) {
         this.hospitals = hospitals;
+    }
+
+    public List<HospitalProtocolVo> getHospitalProtocolIds() {
+        return hospitalProtocolIds;
+    }
+
+    public void setHospitalProtocolIds(List<HospitalProtocolVo> hospitalProtocolIds) {
+        this.hospitalProtocolIds = hospitalProtocolIds;
     }
 
     public String getDataShareLevel() {

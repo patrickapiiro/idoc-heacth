@@ -38,6 +38,26 @@ public class YunUsers  {
     private String hospitalName;
     private String hospitalCode ;
     private String status;
+    private String certificatePracticeId;
+    private String qualificationCertificateId;
+    @Basic
+    @Column(name = "certificate_practice_id")
+    public String getCertificatePracticeId() {
+        return certificatePracticeId;
+    }
+
+    public void setCertificatePracticeId(String certificatePracticeId) {
+        this.certificatePracticeId = certificatePracticeId;
+    }
+    @Basic
+    @Column(name = "qualification_certificate_id")
+    public String getQualificationCertificateId() {
+        return qualificationCertificateId;
+    }
+
+    public void setQualificationCertificateId(String qualificationCertificateId) {
+        this.qualificationCertificateId = qualificationCertificateId;
+    }
 
     @Id
     @Column(name = "id")

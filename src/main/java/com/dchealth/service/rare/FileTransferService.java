@@ -807,7 +807,7 @@ public class FileTransferService {
 
             for(YunDictitem yunDictitem:resultList1){
                 RowItem rowItem = new RowItem();
-                rowItem.setInputcode(yunDictitem.getInputCode());
+                rowItem.setInputCode(yunDictitem.getInputCode());
                 rowItem.setName(StringUtils.replaceBank(value));
                 rowItem.setText(yunDictitem.getItemName());
                 rowItem.setValue(yunDictitem.getItemCode());

@@ -13,6 +13,17 @@ public class ResearchGroupVsHospital {
     private String id;
     private String groupId;
     private String hospitalId;
+    private String protocolId;
+
+    @Basic
+    @Column(name = "protocol_id", nullable = true, length = 64)
+    public String getProtocolId() {
+        return protocolId;
+    }
+
+    public void setProtocolId(String protocolId) {
+        this.protocolId = protocolId;
+    }
 
     @Column(name = "id")
     @Id
@@ -56,7 +67,7 @@ public class ResearchGroupVsHospital {
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
         if (groupId != null ? !groupId.equals(that.groupId) : that.groupId != null) return false;
         if (hospitalId != null ? !hospitalId.equals(that.hospitalId) : that.hospitalId != null) return false;
-
+        if (protocolId != null ? !protocolId.equals(that.protocolId) : that.protocolId != null) return false;
         return true;
     }
 
@@ -65,6 +76,7 @@ public class ResearchGroupVsHospital {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
         result = 31 * result + (hospitalId != null ? hospitalId.hashCode() : 0);
+        result = 31 * result + (protocolId != null ? protocolId.hashCode() : 0);
         return result;
     }
 }
