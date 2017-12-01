@@ -8,6 +8,7 @@ import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.JSONUtil;
 import com.dchealth.util.StringUtils;
 import com.dchealth.util.UserUtils;
+import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -762,9 +763,29 @@ public class TemplateService {
         if(!"".equals(hstatus) && hstatus!=null){
                 hql +=" and t.hstatus = '"+hstatus+"'";
         }
+        List<YunReleaseTemplet> yunReleaseTempletList = baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
+        Map<String,String> userMap = getUserMap(yunReleaseTempletList);
         return baseFacade.createQuery(YunReleaseTemplet.class, hql, new ArrayList<Object>()).getResultList();
     }
 
+    public Map<String,String> getUserMap(List<YunReleaseTemplet> yunReleaseTempletList ) throws Exception{
+        if(yunReleaseTempletList==null || yunReleaseTempletList.isEmpty()){
+            return null;
+        }
+        String userIds = "";
+        StringBuffer sb = new StringBuffer();
+        int i=0;
+        for(YunReleaseTemplet yunReleaseTemplet:yunReleaseTempletList){
+            i++;
+            String templateInfo = yunReleaseTemplet.getMbsj();
+            JSONObject jsonObject = JSONUtil.objectToJson(templateInfo);
+            jsonObject.get("userId");
+            if(i%500==0){
+                userIds="";
+            }
+        }
+        return null;
+    }
     /**
      * 根据资源ID获取模板资源数据
      * @param id

@@ -11,6 +11,7 @@ public class MessageSendDetail {
     private String id;
     private String title;
     private String content;
+    private String sendId;
     private String userName;
     private String status;
     private Timestamp createDate;
@@ -18,10 +19,11 @@ public class MessageSendDetail {
     public MessageSendDetail() {
     }
 
-    public MessageSendDetail(String id, String title, String content, String userName, String status, Date createDate) {
+    public MessageSendDetail(String id, String title, String content,String sendId, String userName, String status, Date createDate) {
         this.id = id;
         this.title = title;
         this.content = content;
+        this.sendId = sendId;
         this.userName = userName;
         this.status = status;
         this.createDate = new Timestamp(createDate.getTime());
@@ -49,6 +51,14 @@ public class MessageSendDetail {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getSendId() {
+        return sendId;
+    }
+
+    public void setSendId(String sendId) {
+        this.sendId = sendId;
     }
 
     public String getUserName() {

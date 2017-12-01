@@ -1,8 +1,12 @@
 package com.dchealth.facade.security;
 
 import com.dchealth.VO.MailProperties;
+import com.dchealth.entity.common.YunUsers;
+import com.dchealth.entity.rare.MessageText;
+import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.SmsSendUtil;
 import com.dchealth.util.StringUtils;
+import com.dchealth.util.UserUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -12,15 +16,14 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Properties;
+import java.sql.Timestamp;
+import java.util.*;
 
 /**
  * Created by Administrator on 2017/8/25.
  */
 @Component
-public class MailSendFacade {
+public class MailSendFacade extends BaseFacade{
 
     private Session session;
 
@@ -66,7 +69,7 @@ public class MailSendFacade {
         pros.setProperty("mail.transport.protocol", mailProperties.getMailTransportProtocal());
         pros.setProperty("mail.smtp.port", String.valueOf((mailProperties.getMailSmtpPort())));
         pros.setProperty("mail.smtp.auth","true");
-        pros.setProperty("mail.debug", "false");
+        //pros.setProperty("mail.debug", "false");
         pros.setProperty("loginUser", mailProperties.getUserName());
         pros.setProperty("loginPassWord", mailProperties.getLoginPassword());
         session= Session.getInstance(pros);//根据属性新建一个邮件会话
@@ -101,7 +104,7 @@ public class MailSendFacade {
      */
     public void sendMail(String subject,String mailTo,String info) throws Exception{
         if(StringUtils.isEmpty(subject)){
-            subject = "用户注册";
+            subject = "新用户注册";
         }
         if(null == session){
             MailProperties mailProperties=getMailProperties();
@@ -117,7 +120,7 @@ public class MailSendFacade {
             InternetAddress to=new InternetAddress(mailTo);
             message.setRecipient(Message.RecipientType.TO, to);
             message.setSubject(getTime()+subject);
-            message.setContent(info,"text/html;charset=gbk");
+            message.setContent(info,"text/html; charset=utf-8");
             message.setSentDate(new Date());
             message.saveChanges();//存储邮件信息
             transport=session.getTransport();
@@ -167,5 +170,67 @@ public class MailSendFacade {
         int minute=now.get(Calendar.MINUTE);
         int second=now.get(Calendar.SECOND);
         return year + "-" + (month + 1) + "-"+day+"  "+hour+":"+minute+":"+second+" ";
+    }
+
+    /**
+     * 用户注册发送站内信给管理员
+     * @param yunUsers
+     * @param adminEmail
+     * @param mailInfo
+     */
+    public void sendMessage(YunUsers yunUsers, String adminEmail,String title,String mailInfo) {
+        MessageText messageText = new MessageText();
+        messageText.setTitle(title);
+        messageText.setContent(mailInfo);
+        messageText.setStatus("0");
+        messageText.setSendDate(new Timestamp(new Date().getTime()));
+        messageText.setCreateBy(yunUsers.getId());
+        messageText.setModifyBy(yunUsers.getId());
+        messageText.setCreateDate(new Timestamp(new Date().getTime()));
+        messageText.setModifyDate(new  Timestamp(new Date().getTime()));
+        MessageText merge = merge(messageText);
+        String hql = "select id from YunUsers where email='"+adminEmail+"'";
+        List<String> list = createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
+        if(list!=null && !list.isEmpty()){
+            String recId = list.get(0);
+            com.dchealth.entity.rare.Message message = new com.dchealth.entity.rare.Message();
+            message.setSendId(yunUsers.getId());
+            message.setRecId(recId);
+            message.setMessageId(merge.getId());
+            message.setStatus("0");
+            message.setCreateDate(new  Timestamp(new Date().getTime()));
+            message.setModifyDate(new  Timestamp(new Date().getTime()));
+            merge(message);
+        }
+    }
+
+    /**
+     * 管理员审核通过发送站内信给用户
+     * @param recId
+     * @param title
+     * @param mailInfo
+     * @throws Exception
+     */
+    public void sendMessageToUser(String recId,String title,String mailInfo) throws Exception{
+        YunUsers yunUsers = UserUtils.getYunUsers();
+        MessageText messageText = new MessageText();
+        messageText.setTitle(title);
+        messageText.setContent(mailInfo);
+        messageText.setStatus("0");
+        messageText.setSendDate(new Timestamp(new Date().getTime()));
+        messageText.setCreateBy(yunUsers.getId());
+        messageText.setModifyBy(yunUsers.getId());
+        messageText.setCreateDate(new Timestamp(new Date().getTime()));
+        messageText.setModifyDate(new  Timestamp(new Date().getTime()));
+        MessageText merge = merge(messageText);
+
+        com.dchealth.entity.rare.Message message = new com.dchealth.entity.rare.Message();
+        message.setSendId(yunUsers.getId());
+        message.setRecId(recId);
+        message.setMessageId(merge.getId());
+        message.setStatus("0");
+        message.setCreateDate(new  Timestamp(new Date().getTime()));
+        message.setModifyDate(new  Timestamp(new Date().getTime()));
+        merge(message);
     }
 }

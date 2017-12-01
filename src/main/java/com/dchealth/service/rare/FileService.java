@@ -66,12 +66,14 @@ public class FileService {
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         long time = IDUtils.genItemId() ;
         String exName = filename.substring(filename.lastIndexOf('.'));
-        String filePath = "/upload";
+        String filePath = File.separator+"upload";
         if(month>=10){
-            path = path+"\\upload"+"\\"+year+month+day+"\\"+hour+"\\"+time+exName;
+            //path = path+"\\upload"+"\\"+year+month+day+"\\"+hour+"\\"+time+exName;
+            path = path+File.separator+"upload"+File.separator+""+year+month+day+File.separator+hour+File.separator+time+exName;
             filePath =filePath+"/"+year+month+day+"/"+hour+"/"+time+exName;
         }else{
-            path = path+"\\upload"+"\\"+year+"0"+month+day+"\\"+hour+"\\"+time+exName;
+            //path = path+"\\upload"+"\\"+year+"0"+month+day+"\\"+hour+"\\"+time+exName;
+            path = path+File.separator+"upload"+File.separator+year+"0"+month+day+File.separator+hour+File.separator+time+exName;
             filePath =filePath+"/"+year+"0"+month+day+"/"+hour+"/"+time+exName;
         }
 
