@@ -1,13 +1,11 @@
 package com.dchealth.service.rare;
 
 import com.dchealth.VO.DiseasePatInfo;
-import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.GroupQuerySqlUtil;
 import com.dchealth.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -159,7 +157,7 @@ public class DiseaseService {
 
     public Map<String,Long> getFollowNumberByType(String doctorId,String inSql,String type){
         Map<String,Long> retMap = new HashMap<String,Long>();
-        String hql = "select count(*) CT,F.DCODE from yun_follow_up as f,yun_patient as p  where YEAR(f.follow_date)=YEAR(current_date()) " +
+        String hql = "select count(*) CT,f.dcode from yun_follow_up as f,yun_patient as p  where YEAR(f.follow_date)=YEAR(current_date()) " +
                      "and MONTH(f.follow_date)=MONTH(current_date()) and f.hstatus='R' and f.patient_id=p.id ";
         if("0".equals(type)){//
             if(StringUtils.isEmpty(inSql)){
@@ -169,12 +167,12 @@ public class DiseaseService {
             }
         }else if("1".equals(type)){
             if(StringUtils.isEmpty(inSql)){
-                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = F.dcode and ym.user_id = '"+doctorId+"')";
+                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = f.dcode and ym.user_id = '"+doctorId+"')";
             }else{
-                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = F.dcode and ym.user_id in ("+inSql+"))";
+                hql += " and exists(select 1 from yun_user_disease_manager ym where ym.dcode = f.dcode and ym.user_id in ("+inSql+"))";
             }
         }
-        hql +=" GROUP BY F.dcode";
+        hql +=" GROUP BY f.dcode";
         List list = baseFacade.createNativeQuery(hql).getResultList();
         if(list!=null && !list.isEmpty()){
             int size = list.size();

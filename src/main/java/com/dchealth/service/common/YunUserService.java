@@ -8,6 +8,7 @@ import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.entity.rare.YunUserDisease;
 import com.dchealth.entity.rare.YunUserDiseaseManager;
 import com.dchealth.entity.common.YunUsers;
+import com.dchealth.facade.security.MailSendFacade;
 import com.dchealth.facade.security.UserFacade;
 import com.dchealth.security.PasswordAndSalt;
 import com.dchealth.security.SystemPasswordService;
@@ -53,6 +54,9 @@ public class YunUserService {
     @Autowired
     private UserFacade userFacade ;
 
+    @Autowired
+    private MailSendFacade mailSendFacade;
+
     private Map<String,Integer> mobileMap = new ConcurrentHashMap<String,Integer>();
     private Map<String,Long> timeMap = new ConcurrentHashMap<String,Long>();
 
@@ -96,6 +100,10 @@ public class YunUserService {
         }
         request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.register);
         request.getSession().removeAttribute(request.getSession().getId()+SmsSendUtil.pictureCode);//清除图形验证码
+        //用户注册发送邮件给管理员进行审核
+        String mailInfo = "您好:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;用户"+yunUsers.getUserName()+"已注册，请及时审核！";
+        mailSendFacade.sendMail("新用户注册",SmsSendUtil.getStringByKey("adminEmail"),mailInfo);
+        mailSendFacade.sendMessage(yunUsers,SmsSendUtil.getStringByKey("adminEmail"),"新用户注册",mailInfo);//发送站内信给要审核的管理员
         return response;
     }
 
@@ -113,7 +121,14 @@ public class YunUserService {
             System.out.println(id);
             throw new Exception("获取不到原信息的ID");
         }
+        YunUsers dbUsers = userFacade.get(YunUsers.class,id);
+        String loginFlags = dbUsers.getLoginFlags();
         YunUsers users = userFacade.merge(yunUsers);
+        if(!users.getLoginFlags().equals(loginFlags) && "R".equals(users.getLoginFlags())){//表示审核通过
+            String mailInfo = "您好:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;您的账号"+yunUsers.getUserName()+"已通过审核，您可以进行登录了，登录连接<a href=\"http://nrdrs.org\">http://nrdrs.org</a>";
+            mailSendFacade.sendMail("用户审核",users.getEmail(),mailInfo);
+            mailSendFacade.sendMessageToUser(yunUsers.getId(),"用户审核",mailInfo);
+        }
         return Response.status(Response.Status.OK).entity(users).build();
     }
 

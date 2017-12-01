@@ -6,7 +6,6 @@ import com.dchealth.entity.rare.Message;
 import com.dchealth.entity.rare.MessageText;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.StringUtils;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -189,9 +188,10 @@ public class MessageService {
     @GET
     @Path("get-my-message-texts")
     public Page<MessageSendDetail> getMyMessageTexts(@QueryParam("userId")String userId, @QueryParam("title")String title, @QueryParam("perPage")
-                                               int perPage, @QueryParam("currentPage")int currentPage){
+                                               int perPage, @QueryParam("currentPage")int currentPage) throws Exception{
         Page<MessageSendDetail> resultPage = new Page<>();
-        String hql = "select new com.dchealth.VO.MessageSendDetail(m.id,m.title,m.content,(select userName from YunUsers where id = m.createBy) as userName,e.status,m.createDate) from MessageText as m,Message as e where m.status <>'-1'" +
+        String hql = "select new com.dchealth.VO.MessageSendDetail(m.id,m.title,m.content,(select id from YunUsers where id = m.createBy) as sendId," +
+                " (select userName from YunUsers where id = m.createBy) as userName,e.status,m.createDate) from MessageText as m,Message as e where m.status <>'-1'" +
                 " and m.id = e.messageId and e.status<>'-1' and e.recId = '"+userId+"'";
         String hqlCount = "select count(*) from MessageText as m,Message as e where m.status <>'-1'" +
                 " and m.id = e.messageId and e.status<>'-1' and e.recId = '"+userId+"'";
