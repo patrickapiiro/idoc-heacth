@@ -70,6 +70,9 @@ public class ResearchGroupService {
             List<HospitalProtocolVo> hospitalProtocolIds =new ArrayList<>();
             if("0".equals(researchGroupVo.getManyHospitalFlag())){//单中心医院默认是自己的医院
                 hospitalDicts = getHospitalDictByCode(yunUsers.getHospitalCode());
+                if(hospitalDicts==null || hospitalDicts.isEmpty()){
+                    throw new Exception("请填写您的医院信息！");
+                }
                 HospitalProtocolVo vo=new HospitalProtocolVo();
                 vo.setHospitalId(hospitalDicts.get(0));
                 hospitalProtocolIds.add(vo);
@@ -740,7 +743,7 @@ public class ResearchGroupService {
         String hql="select new com.dchealth.VO.HospitalsFoldersVo(t.hospitalName,(select count(DISTINCT f.id) from " +
                 "ResearchGroup a,ResearchGroupVsHospital h,HospitalDict d,YunUsers u,YunPatient p,YunFolder f,YunDiseaseList l " +
                 "where a.id=h.groupId and a.researchDiseaseId = l.id and h.hospitalId = d.id and " +
-                "d.hospitalName = u.hospitalName and u.id=p.doctorId and p.id = f.patientId and f.diagnosisCode = l.dcode and a.id='"+groupId+"') as num) from " +
+                "d.hospitalName = u.hospitalName and u.hospitalName = t.hospitalName and u.id=p.doctorId and p.id = f.patientId and f.diagnosisCode = l.dcode and a.id='"+groupId+"') as num) from " +
                 "ResearchGroup g,ResearchGroupVsHospital vs,HospitalDict t where g.id=vs.groupId and vs.hospitalId= t.id and " +
                 "g.id='"+groupId+"' group by t.hospitalName";
         return baseFacade.createQuery(HospitalsFoldersVo.class,hql,new ArrayList<>()).getResultList();
@@ -756,7 +759,7 @@ public class ResearchGroupService {
     @Path("get-groups-folders")
     public List<GroupsFoldersVo> getGroupsFolders(@QueryParam("diagnosisCode") String diagnosisCode){
         String hql="select new com.dchealth.VO.GroupsFoldersVo(g.researchGroupName, (select count(f.id) from ResearchGroup r,ResearchGroupVsUser u,YunPatient p,YunFolder f where" +
-                " r.id=u.groupId and u.userId=p.doctorId and p.id=f.patientId and f.diagnosisCode='"+diagnosisCode+"') as num) from ResearchGroup g,YunDiseaseList l where g.researchDiseaseId=l.id and l.dcode='"+diagnosisCode+"' ";
+                " r.researchGroupName= g.researchGroupName and r.id=u.groupId and u.userId=p.doctorId and p.id=f.patientId and f.diagnosisCode='"+diagnosisCode+"') as num) from ResearchGroup g,YunDiseaseList l where g.researchDiseaseId=l.id and l.dcode='"+diagnosisCode+"' ";
         return baseFacade.createQuery(GroupsFoldersVo.class,hql,new ArrayList<>()).getResultList();
     }
 
