@@ -1,6 +1,7 @@
 package com.dchealth.service.rare;
 
 import com.dchealth.VO.DcodeCountInfo;
+import com.dchealth.VO.DiseaseMonthCount;
 import com.dchealth.VO.DiseaseShareCount;
 import com.dchealth.VO.DiseaseStatisVo;
 import com.dchealth.entity.common.RoleVsUser;
@@ -16,6 +17,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -195,5 +197,65 @@ public class DiseaseCountService {
             }
         }
         return diseaseShareCounts;
+    }
+
+    /**
+     * 获取疾病信息总共录入病历数，本月和上个月录入的病历数
+     * @return
+     */
+    @GET
+    @Path("get-disease-month-count")
+    public List<DiseaseMonthCount> getDiseaseMonthCount(){
+        Map<String,String> nowDataMap = getNeedDateStr("1");
+        Map<String,String> lastDataMap = getNeedDateStr("0");
+        String hql ="select new com.dchealth.VO.DiseaseMonthCount(d.name,d.dcode,count(f.id) as totalCount," +
+                "(select count(yf.id) from YunFolder as yf,YunPatient as yp where yf.diagnosisCode = d.dcode and " +
+                "yf.patientId = yp.id and yp.createDate>='"+nowDataMap.get("firstDay")+"' and yp.createDate<='"+nowDataMap.get("lastDay")+"' " +
+                "group by yf.diagnosisCode) as nowMonthCount,(select count(yf.id) from YunFolder as yf,YunPatient as yp where yf.diagnosisCode = d.dcode and " +
+                "yf.patientId = yp.id and yp.createDate>='"+lastDataMap.get("firstDay")+"' and yp.createDate<='"+lastDataMap.get("lastDay")+"' " +
+                "group by yf.diagnosisCode) as lastMonthCount) from YunDiseaseList as d,YunFolder as f,YunPatient as p" +
+                " where d.dcode = f.diagnosisCode and f.patientId = p.id group by d.id order by count(f.id) desc";
+        return baseFacade.createQuery(DiseaseMonthCount.class,hql,new ArrayList<Object>()).getResultList();
+    }
+
+    /**
+     * 根据类型查询本月和上个月第一天和最后一天的时间
+     * @param type
+     * @return
+     */
+    public Map<String,String> getNeedDateStr(String type){
+        Map<String,String> dateMap = new HashMap<>();
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        if("0".equals(type)){//获取上个月一号到月末日期
+            Calendar cal_1=Calendar.getInstance();//获取当前日期
+            cal_1.add(Calendar.MONTH, -1);
+            cal_1.set(Calendar.DAY_OF_MONTH,1);//设置为1号,当前日期既为本月第一天
+            cal_1.set(Calendar.HOUR_OF_DAY,0);
+            cal_1.set(Calendar.MINUTE,0);
+            cal_1.set(Calendar.SECOND,0);
+            String firstDay = format.format(cal_1.getTime());
+            //获取前月的最后一天
+            Calendar cale = Calendar.getInstance();
+            cale.set(Calendar.DAY_OF_MONTH,0);
+            cale.set(Calendar.HOUR_OF_DAY,23);
+            cale.set(Calendar.MINUTE,59);
+            cale.set(Calendar.SECOND,59);
+            String lastDay = format.format(cale.getTime());
+            dateMap.put("firstDay",firstDay);
+            dateMap.put("lastDay",lastDay);
+        }else{
+            //获取当前月第一天：
+            Calendar c = Calendar.getInstance();
+            String last = format.format(c.getTime());
+            c.add(Calendar.MONTH, 0);
+            c.set(Calendar.DAY_OF_MONTH,1);//设置为1号,当前日期既为本月第一天
+            c.set(Calendar.HOUR_OF_DAY,0);
+            c.set(Calendar.MINUTE,0);
+            c.set(Calendar.SECOND,0);
+            String first = format.format(c.getTime());
+            dateMap.put("firstDay",first);
+            dateMap.put("lastDay",last);
+        }
+        return dateMap;
     }
 }

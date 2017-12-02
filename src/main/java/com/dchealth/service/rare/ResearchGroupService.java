@@ -772,8 +772,8 @@ public class ResearchGroupService {
     @Path("get-hospitals-folders")
     public List<HospitalDisFoldersVo> gethHospitalsFolders(@QueryParam("diagnosisCode") String diagnosisCode){
         String hql="select new com.dchealth.VO.HospitalDisFoldersVo(u.hospitalName,count(f.id) as num) " +
-                "from YunUsers u,YunUserDisease d,YunPatient p,YunFolder f where u.id=d.userId " +
-                "and u.id=p.doctorId and p.id=f.patientId and f.diagnosisCode=d.dcode and d.dcode='"+diagnosisCode+"' group by u.hospitalName";
+                "from YunUsers u,YunPatient p,YunFolder f where " +
+                " u.id=p.doctorId and p.id=f.patientId and f.diagnosisCode = '"+diagnosisCode+"' group by u.hospitalName";
         List<HospitalDisFoldersVo> hospitalDisFoldersVos = baseFacade.createQuery(HospitalDisFoldersVo.class, hql, new ArrayList<>()).getResultList();
         for(HospitalDisFoldersVo vo:hospitalDisFoldersVos){
             if(StringUtils.isEmpty(vo.getHospitalName())){

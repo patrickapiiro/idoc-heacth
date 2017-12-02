@@ -67,14 +67,16 @@ public class MessageService {
             if(recIds.size()==1 && "0".equals(recIds.get(0))){//所有人
                 List<YunUsers> userList = baseFacade.findAll(YunUsers.class);
                 for(YunUsers yunUsers:userList){
-                    Message message = new Message();
-                    message.setSendId(messageVo.getSendId());
-                    message.setRecId(yunUsers.getId());
-                    message.setMessageId(messageId);
-                    message.setStatus("0");
-                    message.setCreateDate(new  Timestamp(new Date().getTime()));
-                    message.setModifyDate(new  Timestamp(new Date().getTime()));
-                    messageList.add(message);
+                    if(!yunUsers.getId().equals(messageVo.getSendId())){
+                        Message message = new Message();
+                        message.setSendId(messageVo.getSendId());
+                        message.setRecId(yunUsers.getId());
+                        message.setMessageId(messageId);
+                        message.setStatus("0");
+                        message.setCreateDate(new  Timestamp(new Date().getTime()));
+                        message.setModifyDate(new  Timestamp(new Date().getTime()));
+                        messageList.add(message);
+                    }
                 }
             }else{
                 for(String recId:recIds){
