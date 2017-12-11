@@ -1,11 +1,12 @@
 package com.dchealth.VO;
 
 public class GroupsFoldersVo {
-
+    private String id;
     private String researchGroupName;
     private long num;
 
-    public GroupsFoldersVo(String researchGroupName, long num) {
+    public GroupsFoldersVo(String id, String researchGroupName, long num) {
+        this.id = id;
         this.researchGroupName = researchGroupName;
         this.num = num;
     }
@@ -27,5 +28,13 @@ public class GroupsFoldersVo {
 
     public void setNum(long num) {
         this.num = num;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

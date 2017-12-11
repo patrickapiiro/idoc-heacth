@@ -12,7 +12,6 @@ import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
-
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -56,6 +55,10 @@ public class ResearchGroupService {
         }
         if(StringUtils.isEmpty(researchGroupVo.getId())){
             YunUsers yunUsers = UserUtils.getYunUsers();
+            List<ResearchGroup> researchGroups = getResearchGroupByUserAndDiseaseId(yunUsers.getId(), researchGroupVo.getResearchDiseaseId());
+            if(researchGroups!=null && !researchGroups.isEmpty()){
+                throw new Exception("您已经在研究该疾病的群组！");
+            }
             ResearchGroup researchGroup = new ResearchGroup();
             researchGroup.setDataShareLevel(researchGroupVo.getDataShareLevel());
             researchGroup.setGroupDesc(researchGroupVo.getGroupDesc());
@@ -193,6 +196,18 @@ public class ResearchGroupService {
     private List<String> getHospitalDictByCode(String hospitalCode) {
         String hql = "select id from HospitalDict where hospitalCode = '"+hospitalCode+"'";
         return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
+    }
+
+    /**
+     * 根据用户id和疾病信息查询群组信息
+     * @param userId
+     * @param diseaseId
+     * @return
+     */
+    private List<ResearchGroup> getResearchGroupByUserAndDiseaseId(String userId,String diseaseId){
+        String hql="select g from ResearchGroup g,ResearchGroupVsUser vs where vs.groupId=g.id and " +
+                "vs.userId='"+userId+"' and g.researchDiseaseId='"+diseaseId+"'";
+        return baseFacade.createQuery(ResearchGroup.class,hql,new ArrayList<>()).getResultList();
     }
 
     /**
@@ -366,24 +381,23 @@ public class ResearchGroupService {
 
     /**
      * 邀请一个人人员入组
-     * @param groupId
-     * @param userIds 用户id
+     * @param inviteVo
      * @return
      */
     @POST
     @Path("invite-research-users")
     @Transactional
-    public Response inviteResearchUser(@QueryParam("groupId") String groupId,@QueryParam("userIds") List<String> userIds) throws Exception{
+    public Response inviteResearchUser(InviteVo inviteVo) throws Exception{
         List<InviteApplyRecord> inviteApplyRecords = new ArrayList<>();
-        if(StringUtils.isEmpty(groupId)){
+        if(StringUtils.isEmpty(inviteVo.getGroupId())){
             throw new Exception("群组id不能为空");
         }
-        if(userIds==null || userIds.isEmpty()){
+        if(inviteVo.getUserIds()==null || inviteVo.getUserIds().isEmpty()){
             throw new Exception("用户id不能为空");
         }
-        for(String userId:userIds){
+        for(String userId:inviteVo.getUserIds()){
             InviteApplyRecord inviteApplyRecord = new InviteApplyRecord();
-            inviteApplyRecord.setGroupId(groupId);
+            inviteApplyRecord.setGroupId(inviteVo.getGroupId());
             inviteApplyRecord.setUserId(userId);
             inviteApplyRecord.setFlag("1");
             inviteApplyRecord.setStatus("0");
@@ -741,14 +755,38 @@ public class ResearchGroupService {
             throw new Exception("群组id不能为空！");
         }
         String hql="select new com.dchealth.VO.HospitalsFoldersVo(t.hospitalName,(select count(DISTINCT f.id) from " +
-                "ResearchGroup a,ResearchGroupVsHospital h,HospitalDict d,YunUsers u,YunPatient p,YunFolder f,YunDiseaseList l " +
-                "where a.id=h.groupId and a.researchDiseaseId = l.id and h.hospitalId = d.id and " +
-                "d.hospitalName = u.hospitalName and u.hospitalName = t.hospitalName and u.id=p.doctorId and p.id = f.patientId and f.diagnosisCode = l.dcode and a.id='"+groupId+"') as num) from " +
+                "ResearchGroup a,ResearchGroupVsHospital h,ResearchGroupVsUser c,HospitalDict d,YunUsers u,YunPatient p,YunFolder f,YunDiseaseList l " +
+                "where a.id=h.groupId and a.researchDiseaseId = l.id and a.id=c.groupId and h.hospitalId = d.id and " +
+                "c.userId=u.id and d.hospitalName = u.hospitalName and u.hospitalName = t.hospitalName and u.id=p.doctorId and p.id = f.patientId and f.diagnosisCode = l.dcode and a.id='"+groupId+"') as num) from " +
                 "ResearchGroup g,ResearchGroupVsHospital vs,HospitalDict t where g.id=vs.groupId and vs.hospitalId= t.id and " +
                 "g.id='"+groupId+"' group by t.hospitalName";
         return baseFacade.createQuery(HospitalsFoldersVo.class,hql,new ArrayList<>()).getResultList();
     }
 
+    /**
+     *根据组id和医院名字查询成员详情和病例数
+     * @param groupId
+     * @param hospitalName
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("get-group-hospitals-users-folders")
+    public List<HospitalsUsersFoldersVo> getGroupHospitalsUsersFolders(@QueryParam("groupId") String groupId,@QueryParam("hospitalName") String hospitalName) throws Exception {
+        if(StringUtils.isEmpty(groupId)){
+            throw new Exception("群组id不能为空！");
+        }
+        if(StringUtils.isEmpty(hospitalName)){
+            throw new Exception("医院名称不能为空！");
+        }
+        String hql="select new com.dchealth.VO.HospitalsUsersFoldersVo(c.id,c.userId,c.userName,l.name,l.dcode,(select count(DISTINCT f.id) from " +
+                "ResearchGroup a,ResearchGroupVsUser b,YunUsers u,YunPatient p,YunFolder f,YunDiseaseList l " +
+                "where a.id=b.groupId and b.userId=u.id and u.userName=c.userName and a.researchDiseaseId = l.id and u.hospitalName = '"+hospitalName+"' and " +
+                "u.id=p.doctorId and p.id = f.patientId and f.diagnosisCode = l.dcode and a.id='"+groupId+"') as num) from " +
+                "ResearchGroup g,ResearchGroupVsUser vs,YunUsers c,YunDiseaseList l where g.id=vs.groupId and g.researchDiseaseId=l.id and vs.userId=c.id and c.hospitalName ='"+hospitalName+"'and " +
+                "g.id='"+groupId+"' group by c.userName";
+        return baseFacade.createQuery(HospitalsUsersFoldersVo.class,hql,new ArrayList<>()).getResultList();
+    }
 
     /**
      * 根据疾病获取群组以及病例数量
@@ -758,9 +796,26 @@ public class ResearchGroupService {
     @GET
     @Path("get-groups-folders")
     public List<GroupsFoldersVo> getGroupsFolders(@QueryParam("diagnosisCode") String diagnosisCode){
-        String hql="select new com.dchealth.VO.GroupsFoldersVo(g.researchGroupName, (select count(f.id) from ResearchGroup r,ResearchGroupVsUser u,YunPatient p,YunFolder f where" +
+        String hql="select new com.dchealth.VO.GroupsFoldersVo(g.id,g.researchGroupName, (select count(f.id) from ResearchGroup r,ResearchGroupVsUser u,YunPatient p,YunFolder f where" +
                 " r.researchGroupName= g.researchGroupName and r.id=u.groupId and u.userId=p.doctorId and p.id=f.patientId and f.diagnosisCode='"+diagnosisCode+"') as num) from ResearchGroup g,YunDiseaseList l where g.researchDiseaseId=l.id and l.dcode='"+diagnosisCode+"' ";
         return baseFacade.createQuery(GroupsFoldersVo.class,hql,new ArrayList<>()).getResultList();
+    }
+
+    /**
+     * 根据群组id获取医生的详情病例数
+     * @param groupId
+     * @return
+     */
+    @GET
+    @Path("get-groups-users-folders")
+    public List<GroupUsersFoldersVo> getGroupsUsersFolders(@QueryParam("groupId") String groupId){
+        String hql="select new com.dchealth.VO.GroupUsersFoldersVo(c.id,c.userId,c.userName,l.name,l.dcode,c.hospitalName,(select count(DISTINCT f.id) from " +
+                "ResearchGroup a,ResearchGroupVsUser b,YunUsers u,YunPatient p,YunFolder f,YunDiseaseList l " +
+                "where a.id=b.groupId and b.userId=u.id and u.userName=c.userName and a.researchDiseaseId = l.id and " +
+                "u.id=p.doctorId and p.id = f.patientId and f.diagnosisCode = l.dcode and a.id='"+groupId+"') as num) from " +
+                "ResearchGroup g,ResearchGroupVsUser vs,YunUsers c,YunDiseaseList l where g.id=vs.groupId and g.researchDiseaseId=l.id and vs.userId=c.id and " +
+                "g.id='"+groupId+"' group by c.userName order by num desc";
+        return baseFacade.createQuery(GroupUsersFoldersVo.class,hql,new ArrayList<>()).getResultList();
     }
 
     /**
@@ -774,13 +829,7 @@ public class ResearchGroupService {
         String hql="select new com.dchealth.VO.HospitalDisFoldersVo(u.hospitalName,count(f.id) as num) " +
                 "from YunUsers u,YunPatient p,YunFolder f where " +
                 " u.id=p.doctorId and p.id=f.patientId and f.diagnosisCode = '"+diagnosisCode+"' group by u.hospitalName";
-        List<HospitalDisFoldersVo> hospitalDisFoldersVos = baseFacade.createQuery(HospitalDisFoldersVo.class, hql, new ArrayList<>()).getResultList();
-        for(HospitalDisFoldersVo vo:hospitalDisFoldersVos){
-            if(StringUtils.isEmpty(vo.getHospitalName())){
-                vo.setHospitalName("其他");
-            }
-        }
-        return hospitalDisFoldersVos;
+        return baseFacade.createQuery(HospitalDisFoldersVo.class, hql, new ArrayList<>()).getResultList();
     }
 
     /**
