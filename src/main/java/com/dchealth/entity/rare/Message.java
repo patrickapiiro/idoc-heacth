@@ -10,6 +10,7 @@ import java.sql.Timestamp;
  * Created by Administrator on 2017/11/9.
  */
 @Entity
+@Table(name = "Message", schema = "emhbase", catalog = "")
 public class Message {
     private String id;
     private String sendId;

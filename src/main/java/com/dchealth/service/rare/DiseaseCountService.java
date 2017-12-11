@@ -201,11 +201,12 @@ public class DiseaseCountService {
 
     /**
      * 获取疾病信息总共录入病历数，本月和上个月录入的病历数
+     * @param name 疾病名称 模糊匹配
      * @return
      */
     @GET
     @Path("get-disease-month-count")
-    public List<DiseaseMonthCount> getDiseaseMonthCount(){
+    public List<DiseaseMonthCount> getDiseaseMonthCount(@QueryParam("name")String name){
         Map<String,String> nowDataMap = getNeedDateStr("1");
         Map<String,String> lastDataMap = getNeedDateStr("0");
         String hql ="select new com.dchealth.VO.DiseaseMonthCount(d.name,d.dcode,count(f.id) as totalCount," +
@@ -214,7 +215,11 @@ public class DiseaseCountService {
                 "group by yf.diagnosisCode) as nowMonthCount,(select count(yf.id) from YunFolder as yf,YunPatient as yp where yf.diagnosisCode = d.dcode and " +
                 "yf.patientId = yp.id and yp.createDate>='"+lastDataMap.get("firstDay")+"' and yp.createDate<='"+lastDataMap.get("lastDay")+"' " +
                 "group by yf.diagnosisCode) as lastMonthCount) from YunDiseaseList as d,YunFolder as f,YunPatient as p" +
-                " where d.dcode = f.diagnosisCode and f.patientId = p.id group by d.id order by count(f.id) desc";
+                " where d.dcode = f.diagnosisCode and f.patientId = p.id  ";
+        if(!StringUtils.isEmpty(name)){
+            hql += " and d.name like '%"+name+"%'";
+        }
+        hql += " group by d.id order by count(f.id) desc";
         return baseFacade.createQuery(DiseaseMonthCount.class,hql,new ArrayList<Object>()).getResultList();
     }
 

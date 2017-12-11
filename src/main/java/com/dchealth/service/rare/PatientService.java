@@ -1,9 +1,6 @@
 package com.dchealth.service.rare;
 
-import com.dchealth.VO.DcodeCountInfo;
-import com.dchealth.VO.DiseaseStatisVo;
-import com.dchealth.VO.Page;
-import com.dchealth.VO.PatientFollowUpVo;
+import com.dchealth.VO.*;
 import com.dchealth.entity.common.RoleVsUser;
 import com.dchealth.entity.rare.YunDiseaseList;
 import com.dchealth.entity.rare.YunFolder;
@@ -46,11 +43,13 @@ public class PatientService {
      */
     @GET
     @Path("list-pat")
-    public Page<YunPatient> listYunPatient(@QueryParam("doctorId") String doctorId, @QueryParam("dcode") String dcode,
+    public Page<PatientVo> listYunPatient(@QueryParam("doctorId") String doctorId, @QueryParam("dcode") String dcode,
                                            @QueryParam("nc") String nc,@QueryParam("tel2") String tel2,@QueryParam("pid") String pid,
                                            @QueryParam("email")String email,@QueryParam("perPage")int perPage,@QueryParam("currentPage")int currentPage){
-        String hql = "select p from YunPatient as p ,YunFolder as f where f.patientId =p.id " ;
-        String hqlCount = "select count(p) from YunPatient as p ,YunFolder as f where f.patientId =p.id " ;
+        String hql = "select new com.dchealth.VO.PatientVo(p.id,p.doctorId,p.owerId,(select userName from YunUsers where status<>'-1' and id = p.doctorId) as " +
+                "doctorName,(select hospitalName from YunUsers where status<>'-1' and id = p.doctorId) as hospitalName,p.deptId,p.pid,p.mid," +
+                "p.nc,p.ne,p.sx,p.br,p.lxfs,p.tel1,p.tel2,p.yzbm,p.email,p.createDate,p.modifyDate,p.bz,p.status) from YunPatient as p ,YunFolder as f where f.patientId =p.id " ;
+        String hqlCount = "select count(p.id) from YunPatient as p ,YunFolder as f where f.patientId =p.id " ;
         if(!"".equals(dcode)&&null!=dcode){
             hql +=" and f.diagnosisCode='"+dcode+"'" ;
             hqlCount +=" and f.diagnosisCode='"+dcode+"'" ;
@@ -97,9 +96,9 @@ public class PatientService {
         }
         hql+=" order by p.createDate desc";
         hqlCount+=" order by p.createDate desc";
-        TypedQuery<YunPatient> baseFacadeQuery = baseFacade.createQuery(YunPatient.class, hql, new ArrayList<Object>());
+        TypedQuery<PatientVo> baseFacadeQuery = baseFacade.createQuery(PatientVo.class, hql, new ArrayList<Object>());
         Long count = baseFacade.createQuery(Long.class, hqlCount, new ArrayList<Object>()).getSingleResult();
-        Page<YunPatient> patientPage= new Page<>();
+        Page<PatientVo> patientPage= new Page<>();
         patientPage.setCounts(count);
         patientPage.setPerPage((long)perPage);
         if(currentPage<=0){
@@ -109,7 +108,7 @@ public class PatientService {
             baseFacadeQuery.setFirstResult((currentPage-1)*perPage) ;
             baseFacadeQuery.setMaxResults(perPage);
         }
-        List<YunPatient> yunPatients = baseFacadeQuery.getResultList();
+        List<PatientVo> yunPatients = baseFacadeQuery.getResultList();
         patientPage.setData(yunPatients);
         return patientPage;
     }

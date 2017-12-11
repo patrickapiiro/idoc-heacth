@@ -89,6 +89,10 @@ public class GroupQuerySqlUtil {
      */
     public static List getGroupAssistList(List ctlist, BaseFacade baseFacade) {
         String userIds = getUserIdsByList(ctlist);
+        if(StringUtils.isEmpty(userIds)){
+            List<String> list = new ArrayList<>();
+            return list;
+        }
         String hql = " select assistant from ResearchAssistant where userId in ("+userIds+")";
         return baseFacade.createQuery(String.class,hql,new ArrayList<Object>()).getResultList();
     }
