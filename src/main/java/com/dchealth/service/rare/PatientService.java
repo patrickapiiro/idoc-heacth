@@ -8,6 +8,7 @@ import com.dchealth.entity.rare.YunFollowUp;
 import com.dchealth.entity.rare.YunPatient;
 import com.dchealth.facade.common.BaseFacade;
 import com.dchealth.util.GroupQuerySqlUtil;
+import com.dchealth.util.JSONUtil;
 import com.dchealth.util.SmsSendUtil;
 import com.dchealth.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,7 @@ public class PatientService {
      */
     @GET
     @Path("list-pat")
-    public Page<PatientVo> listYunPatient(@QueryParam("doctorId") String doctorId, @QueryParam("dcode") String dcode,
+    public Page<PatientVo> listYunPatient(@QueryParam("doctorId") String doctorId, @QueryParam("dcode") String dcode,@QueryParam("flag")boolean flag,
                                            @QueryParam("nc") String nc,@QueryParam("tel2") String tel2,@QueryParam("pid") String pid,
                                            @QueryParam("email")String email,@QueryParam("perPage")int perPage,@QueryParam("currentPage")int currentPage){
         String hql = "select new com.dchealth.VO.PatientVo(p.id,p.doctorId,p.owerId,(select userName from YunUsers where status<>'-1' and id = p.doctorId) as " +
@@ -55,7 +56,11 @@ public class PatientService {
             hqlCount +=" and f.diagnosisCode='"+dcode+"'" ;
         }
         if(!"".equals(doctorId)&&null!=doctorId){
-            String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
+            if(flag){
+                hql+=" and p.doctorId = '"+doctorId+"'" ;
+                hqlCount+=" and p.doctorId = '"+doctorId+"'" ;
+            }else{
+                String userIds = GroupQuerySqlUtil.getUserIds(doctorId,baseFacade);
 //            String doctorIds = "";
 //            if(StringUtils.isEmpty(userIds)){
 //                doctorIds = "'"+doctorId+"'";
@@ -63,19 +68,18 @@ public class PatientService {
 //                doctorIds = userIds;
 //            }
 //            String manageDiseaseCodes = GroupQuerySqlUtil.getManageDiseaseCode(doctorIds,baseFacade);
-            if(StringUtils.isEmpty(userIds)){
-                hql+=" and p.doctorId = '"+doctorId+"'" ;
-                hqlCount+=" and p.doctorId = '"+doctorId+"'" ;
-
+                if(StringUtils.isEmpty(userIds)){
+                    hql+=" and p.doctorId = '"+doctorId+"'" ;
+                    hqlCount+=" and p.doctorId = '"+doctorId+"'" ;
 //                hql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId = '"+doctorId+"'))";
 //                hqlCount += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId = '"+doctorId+"'))";
-            }else{
-                hql+=" and p.doctorId in ("+userIds+")" ;
-                hqlCount+=" and p.doctorId in ("+userIds+")" ;
-
+                }else{
+                    hql+=" and p.doctorId in ("+userIds+")" ;
+                    hqlCount+=" and p.doctorId in ("+userIds+")" ;
 //                hql += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId in ("+userIds+")))";
 //                hqlCount += " or exists(select 1 from YunUserDiseaseManager ym where ym.dcode = f.diagnosisCode and ym.userId in ("+userIds+")))";
 
+                }
             }
         }
         if(!"".equals(nc)&&null!=nc){
@@ -245,5 +249,27 @@ public class PatientService {
         }
         yunPatient.setStatus(status);
         return Response.status(Response.Status.OK).entity(baseFacade.merge(yunPatient)).build();
+    }
+
+    /**
+     * 根据医生id和疾病编码判断医生是否加入群组
+     * @param doctorId
+     * @param diseaseCode
+     * @return
+     */
+    @GET
+    @Path("judge-doctor-if-join-group")
+    public String judgeDoctorIfJoinGroup(@QueryParam("doctorId")String doctorId,@QueryParam("diseaseCode")String diseaseCode) throws Exception{
+        String hql = "select v.user_id from research_group_vs_user as v,(select g.id,g.research_disease_id from research_group as g,research_group_vs_user as v" +
+                " where g.id = v.group_id and g.status<>'-1' and ((v.user_id = '"+doctorId+"' and v.creater_flag ='1') or (v.user_id = '"+doctorId+"' and " +
+                "g.data_share_level = 'A'))) as b,yun_disease_list as d where v.group_id = b.id and b.research_disease_id = d.id and d.dcode = '"+diseaseCode+"'";
+        List list = baseFacade.createNativeQuery(hql).getResultList();
+        Map map = new HashMap();
+        if(list!=null && !list.isEmpty()){
+            map.put("isShare","true");
+        }else {
+            map.put("isShare","false");
+        }
+        return JSONUtil.objectToJsonString(map);
     }
 }
