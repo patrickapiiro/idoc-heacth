@@ -830,9 +830,9 @@ public class ResearchGroupService {
     @Path("get-hospitals-folders")
     public List<HospitalDisFoldersVo> gethHospitalsFolders(@QueryParam("diagnosisCode") String diagnosisCode){
         String hql="select new com.dchealth.VO.HospitalDisFoldersVo(u.hospitalName,count(f.id) as num) " +
-                "from YunUsers u,YunPatient p,YunFolder f,YunUserDisease t where " +
+                "from YunUsers u,YunPatient p,YunFolder f where " +
                 "u.rolename <> 'FORM_USER' and u.id=p.doctorId and p.id=f.patientId and " +
-                "f.diagnosisCode = '"+diagnosisCode+"' and u.id=t.userId and t.dcode='"+diagnosisCode+"' group by u.hospitalName order by num desc";
+                "f.diagnosisCode = '"+diagnosisCode+"' group by u.hospitalName order by num desc";
         return baseFacade.createQuery(HospitalDisFoldersVo.class, hql, new ArrayList<>()).getResultList();
     }
 
@@ -846,9 +846,9 @@ public class ResearchGroupService {
     @Path("get-hospitals-users-folders")
     public List<GroupUsersFoldersVo> gethHospitalsUsersFolders(@QueryParam("diagnosisCode") String diagnosisCode,@QueryParam("hospitalName") String hospitalName){
         String hql="select new com.dchealth.VO.GroupUsersFoldersVo(u.id,u.userId,u.userName,l.name,l.dcode,u.hospitalName,count(DISTINCT f.id) as num) " +
-                "from YunUsers u,YunPatient p,YunFolder f,YunDiseaseList l,YunUserDisease t where " +
-                "u.rolename <> 'FORM_USER' and u.id=p.doctorId and u.id=t.userId and u.hospitalName='"+hospitalName+"' and p.id=f.patientId and " +
-                "f.diagnosisCode = l.dcode and l.dcode='"+diagnosisCode+"' and t.dcode='"+diagnosisCode+"' group by u.userName order by num desc";
+                "from YunUsers u,YunPatient p,YunFolder f,YunDiseaseList l where " +
+                "u.rolename <> 'FORM_USER' and u.id=p.doctorId and u.hospitalName='"+hospitalName+"' and p.id=f.patientId and f.diagnosisCode=l.dcode and " +
+                "f.diagnosisCode ='"+diagnosisCode+"' group by u.userName order by num desc";
         return baseFacade.createQuery(GroupUsersFoldersVo.class, hql, new ArrayList<>()).getResultList();
     }
 
