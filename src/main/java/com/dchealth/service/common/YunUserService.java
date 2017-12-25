@@ -59,6 +59,7 @@ public class YunUserService {
 
     private Map<String,Integer> mobileMap = new ConcurrentHashMap<String,Integer>();
     private Map<String,Long> timeMap = new ConcurrentHashMap<String,Long>();
+    public static final String CACHE_USER = "user";
 
     /**
      * 注册用户信息
@@ -124,6 +125,7 @@ public class YunUserService {
         YunUsers dbUsers = userFacade.get(YunUsers.class,id);
         String loginFlags = dbUsers.getLoginFlags();
         YunUsers users = userFacade.merge(yunUsers);
+        UserUtils.removeCache(CACHE_USER);
         if(!users.getLoginFlags().equals(loginFlags) && "R".equals(users.getLoginFlags())){//表示审核通过
             String mailInfo = "您好:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;您的账号"+yunUsers.getUserName()+"已通过审核，您可以进行登录了，登录连接<a href=\"http://nrdrs.org\">http://nrdrs.org</a>";
             mailSendFacade.sendMail("用户审核",users.getEmail(),mailInfo);
