@@ -51,7 +51,7 @@ public class TimeService {
     }
     
     @GET
-    @Path("get-by-id")
+    @Path("get-by-id2")
     public YunUsers getYunUser(@QueryParam("id") String id){
         return baseFacade.get(YunUsers.class,id);
     }
