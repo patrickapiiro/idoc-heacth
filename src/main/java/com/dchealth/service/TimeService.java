@@ -49,6 +49,12 @@ public class TimeService {
     public Response userLogin(){
         return Response.status(Response.Status.OK).entity("dengluchenggong").build();
     }
+    
+    @GET
+    @Path("get-by-id2")
+    public YunUsers getYunUser(@QueryParam("id") String id){
+        return baseFacade.get(YunUsers.class,id);
+    }
 
     @GET
     @Path("get-user")
